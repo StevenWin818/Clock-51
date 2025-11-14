@@ -56,10 +56,10 @@ static void Display_Hanzi16(unsigned char page, unsigned char col, unsigned char
 static void Display_DrawMenuCursor(unsigned char line, bit visible)
 {
     unsigned char base_page;
-    unsigned char col;
-    unsigned char total_width;
-    unsigned char time_col;
-    unsigned char i;
+        unsigned char total_width;
+        unsigned char time_col;
+        unsigned char i;
+        unsigned char col;
 
     // 与原逻辑一致：行号 0 -> page0，1 -> page3，2 -> page6
     if (line == 0)
@@ -174,7 +174,6 @@ void Display_HomePage(void) {
     unsigned char month_display;
     unsigned char day_display;
     unsigned char total_width;
-    unsigned char time_col;
     bit editing_date;
     bit editing_time;
     unsigned char date_highlight;
@@ -328,7 +327,6 @@ void Display_StopwatchPage(void) {
     unsigned char idata ds;
     unsigned char idata col;
     unsigned char idata i;
-    unsigned char di;
     unsigned char idata page;
     unsigned char idata lap_index;
     unsigned char idata lap_no;
@@ -455,7 +453,6 @@ void Display_LapViewPage(void) {
     unsigned char idata start_index;
     unsigned char idata page;
     unsigned char idata lap_no;
-    unsigned char dot_col;
     unsigned char base_col;
 
     if(g_last_screen != DISPLAY_SCREEN_LAP) {
