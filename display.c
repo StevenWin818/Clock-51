@@ -3,7 +3,6 @@
 #include "stopwatch.h"
 #include "state.h"
 #include <reg51.h>
-#include "clock.h"
 extern bit g_menu_cursor_visible;
 
 typedef struct {
@@ -139,27 +138,13 @@ static void Display_Char_16x16_Custom(unsigned char page, unsigned char col, cha
 }
 
 void Display_Char_8x16(unsigned char page, unsigned char col, char c) {
-    unsigned char i;
-    unsigned char index = GetCharIndex(c);
-
-    for(i = 0; i < 8; i++) {
-        LCD_DrawByte(page, col + i, Font_8x16[index][i]);
-    }
-    for(i = 0; i < 8; i++) {
-        LCD_DrawByte(page + 1, col + i, Font_8x16[index][i + 8]);
-    }
+    /* 复用 Custom 版本以减少重复代码 */
+    Display_Char_8x16_Custom(page, col, c, 0);
 }
 
 void Display_Char_16x16(unsigned char page, unsigned char col, char c) {
-    unsigned char i;
-    unsigned char index = GetCharIndex(c);
-
-    for(i = 0; i < 16; i++) {
-        LCD_DrawByte(page, col + i, Font_16x16[index][i]);
-    }
-    for(i = 0; i < 16; i++) {
-        LCD_DrawByte(page + 1, col + i, Font_16x16[index][i + 16]);
-    }
+    /* 复用 Custom 版本以减少重复代码 */
+    Display_Char_16x16_Custom(page, col, c, 0);
 }
 
 void Display_Char_24x32(unsigned char page, unsigned char col, char c) {
@@ -444,13 +429,12 @@ void Display_StopwatchPage(void) {
     }
     /* 强制使用自定义像素点作为秒与毫秒的分隔符（始终绘制） */
     {
-        /* 在 col+64 处绘制一个小的点阵（8 列 x 16 行），上半页清空，下半页绘制小点 */
-        /* 更小的点：两列像素，位于中间，视觉更精简 */
-        static const unsigned char code dot_top[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
-        static const unsigned char code dot_bottom[8] = {0x00,0x00,0x00,0x18,0x18,0x00,0x00,0x00};
-        for(di = 0; di < 8; di++) {
-            LCD_DrawByte(0, col + 64 + di, dot_top[di]);
-            LCD_DrawByte(1, col + 64 + di, dot_bottom[di]);
+        /* 绘制分隔点，使用共用辅助函数 */
+        unsigned char dot_base = col + 64;
+        unsigned char di_local;
+        for(di_local = 0; di_local < 8; di_local++) {
+            LCD_DrawByte(0, dot_base + di_local, 0x00);
+            LCD_DrawByte(1, dot_base + di_local, (di_local == 3 || di_local == 4) ? 0x18 : 0x00);
         }
     }
     if(first_draw || g_prev_stop_decisecond != ds) {
@@ -489,10 +473,11 @@ void Display_StopwatchPage(void) {
                 Display_Char_8x16(page, base_col + 56, g_laps[lap_index].second % 10 + '0');
                 /* 绘制与主秒表相同的点和毫秒 */
                 {
-                    unsigned char di2;
-                    for(di2 = 0; di2 < 8; di2++) {
-                        LCD_DrawByte(page, base_col + 64 + di2, 0x00);
-                        LCD_DrawByte(page + 1, base_col + 64 + di2, (di2 == 3 || di2 == 4) ? 0x18 : 0x00);
+                    unsigned char dot_base = base_col + 64;
+                    unsigned char di2_local;
+                    for(di2_local = 0; di2_local < 8; di2_local++) {
+                        LCD_DrawByte(page, dot_base + di2_local, 0x00);
+                        LCD_DrawByte(page + 1, dot_base + di2_local, (di2_local == 3 || di2_local == 4) ? 0x18 : 0x00);
                     }
                     Display_Char_8x16(page, base_col + 72, g_laps[lap_index].decisecond + '0');
                 }
@@ -553,10 +538,11 @@ void Display_LapViewPage(void) {
             Display_Char_8x16(page, base_col + 56, g_laps[j].second % 10 + '0');
             /* 绘制点区和毫秒，与主界面一致 */
             {
-                unsigned char di3;
-                for(di3 = 0; di3 < 8; di3++) {
-                    LCD_DrawByte(page, base_col + 64 + di3, 0x00);
-                    LCD_DrawByte(page + 1, base_col + 64 + di3, (di3 == 3 || di3 == 4) ? 0x18 : 0x00);
+                unsigned char dot_base = base_col + 64;
+                unsigned char di3_local;
+                for(di3_local = 0; di3_local < 8; di3_local++) {
+                    LCD_DrawByte(page, dot_base + di3_local, 0x00);
+                    LCD_DrawByte(page + 1, dot_base + di3_local, (di3_local == 3 || di3_local == 4) ? 0x18 : 0x00);
                 }
                 Display_Char_8x16(page, base_col + 72, g_laps[j].decisecond + '0');
             }
