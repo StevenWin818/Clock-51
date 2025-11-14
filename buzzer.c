@@ -12,9 +12,8 @@ static volatile unsigned char buzzer_data = 0;
 #define BUZZ_LASTSEC_GET() ((buzzer_data >> 6) & 0x3F)
 #define BUZZ_LASTSEC_SET(sec) (buzzer_data = (buzzer_data & 0x3F) | (((sec) & 0x3F) << 6))
 
-/* 若硬件是低电平有效，请改成：#define BUZZER_ON  0 / #define BUZZER_OFF 1 */
-#define BUZZER_ON 1
-#define BUZZER_OFF 0
+/* BUZZER_ON / BUZZER_OFF 由 buzzer.h 中的 board_config.h 定义，
+    不在此处重复定义，保持板级一致性。 */
 
 /* 统一启动蜂鸣器，durationTicks 以 10ms 为单位 */
 static void Buzzer_Start(unsigned char durationTicks)
