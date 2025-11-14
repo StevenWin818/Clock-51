@@ -32,14 +32,7 @@ void Clock_Update(void) {
 
 // 闰年判断
 unsigned char IsLeapYear(unsigned int year) {
-    if(year % 400 == 0) {
-        return 1;
-    } else if(year % 100 == 0) {
-        return 0;
-    } else if(year % 4 == 0) {
-        return 1;
-    }
-    return 0;
+    return (unsigned char)(((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
 }
 
 // 获取月份天数
@@ -55,31 +48,30 @@ unsigned char GetDaysInMonth(unsigned int year, unsigned char month) {
 // 增加一秒
 void DateTime_AddSecond(void) {
     g_datetime.second++;
-    
-    if(g_datetime.second >= 60) {
-        g_datetime.second = 0;
-        g_datetime.minute++;
-        
-        if(g_datetime.minute >= 60) {
-            g_datetime.minute = 0;
-            g_datetime.hour++;
-            
-            if(g_datetime.hour >= 24) {
-                g_datetime.hour = 0;
-                g_datetime.day++;
-                
-                if(g_datetime.day > GetDaysInMonth(g_datetime.year, g_datetime.month)) {
-                    g_datetime.day = 1;
-                    g_datetime.month++;
-                    
-                    if(g_datetime.month > 12) {
-                        g_datetime.month = 1;
-                        g_datetime.year++;
-                    }
-                }
-            }
-        }
-    }
+    if (g_datetime.second < 60)
+        return;
+    g_datetime.second = 0;
+
+    g_datetime.minute++;
+    if (g_datetime.minute < 60)
+        return;
+    g_datetime.minute = 0;
+
+    g_datetime.hour++;
+    if (g_datetime.hour < 24)
+        return;
+    g_datetime.hour = 0;
+
+    g_datetime.day++;
+    if (g_datetime.day <= GetDaysInMonth(g_datetime.year, g_datetime.month))
+        return;
+    g_datetime.day = 1;
+
+    g_datetime.month++;
+    if (g_datetime.month <= 12)
+        return;
+    g_datetime.month = 1;
+    g_datetime.year++;
 }
 
 // 设置日期
