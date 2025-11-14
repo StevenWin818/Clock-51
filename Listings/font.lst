@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 01:32:57 PAGE 1   
+C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 05:58:03 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE FONT
@@ -62,7 +62,7 @@ line level    source
   52              // '5'
   53              {0x00,0x00,0xFC,0xFC,0x84,0x84,0x84,0x84,0x0C,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,
   54               0x00,0x00,0x18,0x38,0x20,0x20,0x20,0x31,0x1F,0x0E,0x00,0x00,0x00,0x00,0x00,0x00},
-C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 01:32:57 PAGE 2   
+C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 05:58:03 PAGE 2   
 
   55              // '6'
   56              {0x00,0x00,0xF0,0xF8,0x4C,0x44,0x44,0xCC,0x88,0x18,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -126,7 +126,7 @@ line level    source
  101               0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x0E,0x0E,0x0E,0x0E,0x0E,0x0E,0x0F,0x1F,0xFB,0xF1,0xE0,0x00,0
              -x00,0x00,0x00,0x00,
  102               0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x70,0x70,0x70,0x70,0x70,0x70,0xF0,0xF8,0xDF,0x8F,0x07,0x00,0
-C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 01:32:57 PAGE 3   
+C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 05:58:03 PAGE 3   
 
              -x00,0x00,0x00,0x00,
  103               0x00,0x00,0x00,0x38,0x78,0x70,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0xE0,0x70,0x78,0x3F,0x1F,0x0F,0x00,0
@@ -190,7 +190,7 @@ line level    source
              -x00,0x00,0x00,0x00,
  136               0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x03,0x03,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0
              -x00,0x00,0x00,0x00,
-C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 01:32:57 PAGE 4   
+C51 COMPILER V9.60.7.0   FONT                                                              11/15/2025 05:58:03 PAGE 4   
 
  137               0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xC0,0xC0,0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0
              -x00,0x00,0x00,0x00,
@@ -209,20 +209,16 @@ line level    source
  145          
  146          // 获取字符索引
  147          unsigned char GetCharIndex(char c) {
- 148   1          if(c >= '0' && c <= '9') {
- 149   2              return c - '0';
- 150   2          } else if(c == ':') {
- 151   2              return 10;
- 152   2          } else if(c == '-') {
- 153   2              return 11;
- 154   2          } else if(c == '/') {
- 155   2              return 12;
- 156   2          } else if(c == '.') {
- 157   2              return 11;  // 对于24x32字体，点用索引11
- 158   2          } else {
- 159   2              return 13;  // 空格
- 160   2          }
- 161   1      }
+ 148   1          if (c >= '0' && c <= '9')
+ 149   1              return (unsigned char)(c - '0');
+ 150   1          switch (c) {
+ 151   2              case ':': return 10;
+ 152   2              case '-': return 11;
+ 153   2              case '/': return 12;
+ 154   2              case '.': return 11; /* 对于24x32字体，点用索引11 */
+ 155   2              default:  return 13; /* 空格 */
+ 156   2          }
+ 157   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

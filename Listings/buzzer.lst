@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   BUZZER                                                            11/15/2025 02:55:12 PAGE 1   
+C51 COMPILER V9.60.7.0   BUZZER                                                            11/15/2025 06:19:19 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE BUZZER
@@ -22,114 +22,113 @@ line level    source
   12          #define BUZZ_LASTSEC_GET() ((buzzer_data >> 6) & 0x3F)
   13          #define BUZZ_LASTSEC_SET(sec) (buzzer_data = (buzzer_data & 0x3F) | (((sec) & 0x3F) << 6))
   14          
-  15          /* 若硬件是低电平有效，请改成：#define BUZZER_ON  0 / #define BUZZER_OFF 1 */
-  16          #define BUZZER_ON 1
-  17          #define BUZZER_OFF 0
-  18          
-  19          /* 统一启动蜂鸣器，durationTicks 以 10ms 为单位 */
-  20          static void Buzzer_Start(unsigned char durationTicks)
-  21          {
-  22   1          if (durationTicks == 0)
-  23   1              return;
-  24   1          BUZZER = BUZZER_ON;
-  25   1          g_buzzer_active = 1;
-  26   1          BUZZ_REMAINING_SET(durationTicks); /* 锁定时长，后续只递减，不看当前时间 */
-  27   1      }
-  28          
-  29          /* 初始化 */
-  30          void Buzzer_Init(void)
-  31          {
-  32   1          BUZZER = BUZZER_OFF; /* 初始静音 */
-  33   1          g_buzzer_active = 0;
-  34   1          buzzer_data = 0x00;     /* remaining=0, last_second=0 */
-  35   1          BUZZ_LASTSEC_SET(0x3F); /* 设成无效秒，避免上电立即触发 */
-  36   1      }
-  37          
-  38          /* 每 10ms 在定时器 ISR 中调用一次 */
-  39          void Buzzer_Update(void)
-  40          {
-  41   1          unsigned char rem;
-  42   1      
-  43   1          if (!g_buzzer_active)
-  44   1              return;
-  45   1      
-  46   1          rem = BUZZ_REMAINING_GET();
-  47   1          if (rem > 0)
-  48   1          {
-  49   2              rem--;
-  50   2              BUZZ_REMAINING_SET(rem);
-  51   2              if (rem == 0)
-  52   2              {
-  53   3                  BUZZER = BUZZER_OFF;
-  54   3                  g_buzzer_active = 0;
-C51 COMPILER V9.60.7.0   BUZZER                                                            11/15/2025 02:55:12 PAGE 2   
+  15          /* BUZZER_ON / BUZZER_OFF 由 buzzer.h 中的 board_config.h 定义，
+  16              不在此处重复定义，保持板级一致性。 */
+  17          
+  18          /* 统一启动蜂鸣器，durationTicks 以 10ms 为单位 */
+  19          static void Buzzer_Start(unsigned char durationTicks)
+  20          {
+  21   1          if (durationTicks == 0)
+  22   1              return;
+  23   1          BUZZER = BUZZER_ON;
+  24   1          g_buzzer_active = 1;
+  25   1          BUZZ_REMAINING_SET(durationTicks); /* 锁定时长，后续只递减，不看当前时间 */
+  26   1      }
+  27          
+  28          /* 初始化 */
+  29          void Buzzer_Init(void)
+  30          {
+  31   1          BUZZER = BUZZER_OFF; /* 初始静音 */
+  32   1          g_buzzer_active = 0;
+  33   1          buzzer_data = 0x00;     /* remaining=0, last_second=0 */
+  34   1          BUZZ_LASTSEC_SET(0x3F); /* 设成无效秒，避免上电立即触发 */
+  35   1      }
+  36          
+  37          /* 每 10ms 在定时器 ISR 中调用一次 */
+  38          void Buzzer_Update(void)
+  39          {
+  40   1          unsigned char rem;
+  41   1      
+  42   1          if (!g_buzzer_active)
+  43   1              return;
+  44   1      
+  45   1          rem = BUZZ_REMAINING_GET();
+  46   1          if (rem == 0)
+  47   1          {
+  48   2              /* 容错：剩余为0但仍 active */
+  49   2              BUZZER = BUZZER_OFF;
+  50   2              g_buzzer_active = 0;
+  51   2              return;
+  52   2          }
+  53   1      
+  54   1          rem--;
+C51 COMPILER V9.60.7.0   BUZZER                                                            11/15/2025 06:19:19 PAGE 2   
 
-  55   3              }
-  56   2          }
-  57   1          else
-  58   1          {
-  59   2              /* 容错：若剩余为0但仍active，强制关断 */
-  60   2              BUZZER = BUZZER_OFF;
-  61   2              g_buzzer_active = 0;
-  62   2          }
-  63   1      }
-  64          
-  65          /* 100ms 短响（10 tick） */
-  66          void Buzzer_Short(void)
-  67          {
-  68   1          /* 这里的合法性判断保留你的原逻辑，也可精简 */
-  69   1          if (g_datetime.year >= 2000 && g_datetime.year <= 2099 &&
-  70   1              g_datetime.month >= 1 && g_datetime.month <= 12)
-  71   1          {
-  72   2              Buzzer_Start(10);
-  73   2          }
-  74   1      }
-  75          
-  76          /* 500ms 长响（50 tick） */
-  77          void Buzzer_Long(void)
-  78          {
-  79   1          if (g_datetime.year >= 2000 && g_datetime.year <= 2099 &&
-  80   1              g_datetime.month >= 1 && g_datetime.month <= 12)
-  81   1          {
-  82   2              Buzzer_Start(50);
-  83   2          }
-  84   1      }
-  85          
-  86          /* 报时触发逻辑：55~59 秒短响；0 秒长响 */
-  87          void Buzzer_Check(void)
-  88          {
-  89   1          unsigned char now_sec = g_datetime.second & 0x3F;
-  90   1          unsigned char last_sec = BUZZ_LASTSEC_GET();
-  91   1      
-  92   1          /* 用 last_second 防抖，确保每秒只触发一次 */
-  93   1          if (now_sec == last_sec)
-  94   1          {
-  95   2              return;
-  96   2          }
-  97   1          BUZZ_LASTSEC_SET(now_sec);
-  98   1      
-  99   1          /* 59分的 55~59 秒短响（每秒一次） */
- 100   1          if (g_datetime.minute == 59 && now_sec >= 55 && now_sec <= 59)
- 101   1          {
- 102   2              Buzzer_Short();
- 103   2              return;
- 104   2          }
- 105   1      
- 106   1          /* 整点：第 0 秒长响（仅一次） */
- 107   1          if (g_datetime.minute == 0 && now_sec == 0)
- 108   1          {
- 109   2              Buzzer_Long();
- 110   2              return;
- 111   2          }
- 112   1      
- 113   1          /* 其余时间不触发 */
- 114   1      }
+  55   1          BUZZ_REMAINING_SET(rem);
+  56   1          if (rem == 0)
+  57   1          {
+  58   2              BUZZER = BUZZER_OFF;
+  59   2              g_buzzer_active = 0;
+  60   2          }
+  61   1      }
+  62          
+  63          /* 通用脉冲（ticks 单位为 10ms）——供短/长响调用 */
+  64          static void Buzzer_Pulse(unsigned char ticks)
+  65          {
+  66   1          if (g_datetime.year >= 2000 && g_datetime.year <= 2099 &&
+  67   1              g_datetime.month >= 1 && g_datetime.month <= 12)
+  68   1          {
+  69   2              Buzzer_Start(ticks);
+  70   2          }
+  71   1      }
+  72          
+  73          /* 100ms 短响（10 tick） */
+  74          void Buzzer_Short(void)
+  75          {
+  76   1          Buzzer_Pulse(10);
+  77   1      }
+  78          
+  79          /* 500ms 长响（50 tick） */
+  80          void Buzzer_Long(void)
+  81          {
+  82   1          Buzzer_Pulse(50);
+  83   1      }
+  84          
+  85          /* 报时触发逻辑：55~59 秒短响；0 秒长响 */
+  86          void Buzzer_Check(void)
+  87          {
+  88   1          unsigned char now_sec = g_datetime.second & 0x3F;
+  89   1          unsigned char last_sec = BUZZ_LASTSEC_GET();
+  90   1      
+  91   1          /* 用 last_second 防抖，确保每秒只触发一次 */
+  92   1          if (now_sec == last_sec)
+  93   1          {
+  94   2              return;
+  95   2          }
+  96   1          BUZZ_LASTSEC_SET(now_sec);
+  97   1      
+  98   1          /* 59分的 55~59 秒短响（每秒一次） */
+  99   1          if (g_datetime.minute == 59 && now_sec >= 55 && now_sec <= 59)
+ 100   1          {
+ 101   2              Buzzer_Short();
+ 102   2              return;
+ 103   2          }
+ 104   1      
+ 105   1          /* 整点：第 0 秒长响（仅一次） */
+ 106   1          if (g_datetime.minute == 0 && now_sec == 0)
+ 107   1          {
+ 108   2              Buzzer_Long();
+ 109   2              return;
+ 110   2          }
+ 111   1      
+ 112   1          /* 其余时间不触发 */
+ 113   1      }
 
-
-C51 COMPILER V9.60.7.0   BUZZER                                                            11/15/2025 02:55:12 PAGE 3   
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    220    ----
+C51 COMPILER V9.60.7.0   BUZZER                                                            11/15/2025 06:19:19 PAGE 3   
+
+   CODE SIZE        =    181    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----

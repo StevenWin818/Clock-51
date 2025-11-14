@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 01:32:58 PAGE 1   
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 06:28:59 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE LCD_KS0108
@@ -16,262 +16,200 @@ line level    source
    6   1          for(i = 0; i < 10; i++);  // 增加到10
    7   1      }
    8          
-   9          // 检查忙状态
-  10          void LCD_CheckBusy(unsigned char side) {
-  11   1          unsigned char status;
-  12   1          unsigned char timeout = 0;
-  13   1          
-  14   1          LCD_DATA = 0xFF;
-  15   1          LCD_DI = 0;  // 指令
-  16   1          LCD_RW = 1;  // 读
-  17   1          
-  18   1          if(side == 0) {
-  19   2              LCD_CS1 = 1;
-  20   2              LCD_CS2 = 0;
-  21   2          } else {
-  22   2              LCD_CS1 = 0;
-  23   2              LCD_CS2 = 1;
-  24   2          }
-  25   1          
-  26   1          do {
-  27   2              LCD_E = 1;
-  28   2              LCD_Delay();
-  29   2              status = LCD_DATA;
-  30   2              LCD_E = 0;
-  31   2              LCD_Delay();
-  32   2              timeout++;
-  33   2              if(timeout > 200) break;  // 超时退出
-  34   2          } while(status & 0x80);  // 检查忙标志
-  35   1          
-  36   1          LCD_CS1 = 0;
-  37   1          LCD_CS2 = 0;
-  38   1      }
-  39          
-  40          // 写命令
-  41          void LCD_WriteCmd(unsigned char cmd, unsigned char side) {
-  42   1          LCD_CheckBusy(side);
-  43   1          LCD_DI = 0;  // 指令
-  44   1          LCD_RW = 0;  // 写
-  45   1          
-  46   1          if(side == 0) {
-  47   2              LCD_CS1 = 1;
-  48   2              LCD_CS2 = 0;
-  49   2          } else {
-  50   2              LCD_CS1 = 0;
-  51   2              LCD_CS2 = 1;
-  52   2          }
-  53   1          
+   9          // helper: 选择左右半屏
+  10          static void LCD_Select(unsigned char side) {
+  11   1          if (side == 0) {
+  12   2              LCD_CS1 = 1;
+  13   2              LCD_CS2 = 0;
+  14   2          } else {
+  15   2              LCD_CS1 = 0;
+  16   2              LCD_CS2 = 1;
+  17   2          }
+  18   1      }
+  19          
+  20          static void LCD_Deselect(void) {
+  21   1          LCD_CS1 = 0;
+  22   1          LCD_CS2 = 0;
+  23   1      }
+  24          
+  25          // 检查忙状态
+  26          void LCD_CheckBusy(unsigned char side) {
+  27   1          unsigned char status;
+  28   1          unsigned char timeout = 0;
+  29   1          
+  30   1          LCD_DATA = 0xFF;
+  31   1          LCD_DI = 0;  // 指令
+  32   1          LCD_RW = 1;  // 读
+  33   1          LCD_Select(side);
+  34   1          
+  35   1          do {
+  36   2              LCD_E = 1;
+  37   2              LCD_Delay();
+  38   2              status = LCD_DATA;
+  39   2              LCD_E = 0;
+  40   2              LCD_Delay();
+  41   2              timeout++;
+  42   2              if(timeout > 200) break;  // 超时退出
+  43   2          } while(status & 0x80);  // 检查忙标志
+  44   1          
+  45   1          LCD_Deselect();
+  46   1      }
+  47          
+  48          // 写命令
+  49          void LCD_WriteCmd(unsigned char cmd, unsigned char side) {
+  50   1          LCD_CheckBusy(side);
+  51   1          LCD_DI = 0;  // 指令
+  52   1          LCD_RW = 0;  // 写
+  53   1          LCD_Select(side);
   54   1          LCD_DATA = cmd;
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 01:32:58 PAGE 2   
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 06:28:59 PAGE 2   
 
   55   1          LCD_E = 1;
   56   1          LCD_Delay();
   57   1          LCD_E = 0;
   58   1          LCD_Delay();
-  59   1          
-  60   1          LCD_CS1 = 0;
-  61   1          LCD_CS2 = 0;
-  62   1      }
-  63          
-  64          // 写数据
-  65          void LCD_WriteData(unsigned char dat, unsigned char side) {
-  66   1          LCD_CheckBusy(side);
-  67   1          LCD_DI = 1;  // 数据
-  68   1          LCD_RW = 0;  // 写
-  69   1          
-  70   1          if(side == 0) {
-  71   2              LCD_CS1 = 1;
-  72   2              LCD_CS2 = 0;
-  73   2          } else {
-  74   2              LCD_CS1 = 0;
-  75   2              LCD_CS2 = 1;
-  76   2          }
-  77   1          
-  78   1          LCD_DATA = dat;
-  79   1          LCD_E = 1;
-  80   1          LCD_Delay();
-  81   1          LCD_E = 0;
-  82   1          LCD_Delay();
+  59   1          LCD_Deselect();
+  60   1      }
+  61          
+  62          // 写数据
+  63          void LCD_WriteData(unsigned char dat, unsigned char side) {
+  64   1          LCD_CheckBusy(side);
+  65   1          LCD_DI = 1;  // 数据
+  66   1          LCD_RW = 0;  // 写
+  67   1          LCD_Select(side);
+  68   1          LCD_DATA = dat;
+  69   1          LCD_E = 1;
+  70   1          LCD_Delay();
+  71   1          LCD_E = 0;
+  72   1          LCD_Delay();
+  73   1          LCD_Deselect();
+  74   1      }
+  75          
+  76          /* 已移除：LCD_ReadData (读数据) 实现
+  77             该函数在驱动外部未被调用，且内部唯一调用来自注释掉的 LCD_DrawPoint，
+  78             因此移除此实现以节省代码空间。 */
+  79          
+  80          // LCD初始化
+  81          void LCD_Init(void) {
+  82   1          unsigned int i;
   83   1          
-  84   1          LCD_CS1 = 0;
-  85   1          LCD_CS2 = 0;
-  86   1      }
-  87          
-  88          // 读数据
-  89          unsigned char LCD_ReadData(unsigned char side) {
-  90   1          unsigned char dat;
-  91   1          
-  92   1          LCD_CheckBusy(side);
-  93   1          LCD_DATA = 0xFF;
-  94   1          LCD_DI = 1;  // 数据
-  95   1          LCD_RW = 1;  // 读
-  96   1          
-  97   1          if(side == 0) {
-  98   2              LCD_CS1 = 1;
-  99   2              LCD_CS2 = 0;
- 100   2          } else {
- 101   2              LCD_CS1 = 0;
- 102   2              LCD_CS2 = 1;
- 103   2          }
- 104   1          
- 105   1          LCD_E = 1;
- 106   1          LCD_Delay();
- 107   1          dat = LCD_DATA;
- 108   1          LCD_E = 0;
- 109   1          LCD_Delay();
+  84   1          // 复位脉冲 - 严格按照KS0108时序
+  85   1          LCD_RST = 0;
+  86   1          for(i = 0; i < 5000; i++);  // RST低电平至少1ms
+  87   1          LCD_RST = 1;
+  88   1          for(i = 0; i < 10000; i++);  // RST释放后等待LCD稳定(至少10ms)
+  89   1          
+  90   1          // 初始化左右两半屏
+  91   1          LCD_WriteCmd(LCD_CMD_DISPLAY_ON, 0);
+  92   1          LCD_WriteCmd(LCD_CMD_DISPLAY_ON, 1);
+  93   1          LCD_WriteCmd(LCD_CMD_START_LINE | 0, 0);
+  94   1          LCD_WriteCmd(LCD_CMD_START_LINE | 0, 1);
+  95   1          
+  96   1          for(i = 0; i < 1000; i++);  // 额外稳定时间
+  97   1          LCD_Clear();
+  98   1      }
+  99          
+ 100          // 设置位置
+ 101          void LCD_SetPos(unsigned char page, unsigned char col) {
+ 102   1          unsigned char side;
+ 103   1          
+ 104   1          if(col < 64) {
+ 105   2              side = 0;
+ 106   2          } else {
+ 107   2              side = 1;
+ 108   2              col -= 64;
+ 109   2          }
  110   1          
- 111   1          LCD_CS1 = 0;
- 112   1          LCD_CS2 = 0;
- 113   1          
- 114   1          return dat;
- 115   1      }
- 116          
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 01:32:58 PAGE 3   
+ 111   1          // 确保 page 和 col 在合法范围
+ 112   1          if(page > 7) page = 7;
+ 113   1          if(col > 63) col = 63;
+ 114   1          
+ 115   1          LCD_WriteCmd(LCD_CMD_SET_X | page, side);
+ 116   1          LCD_WriteCmd(LCD_CMD_SET_Y | col, side);
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 06:28:59 PAGE 3   
 
- 117          // LCD初始化
- 118          void LCD_Init(void) {
- 119   1          unsigned int i;
- 120   1          
- 121   1          // 复位脉冲 - 严格按照KS0108时序
- 122   1          LCD_RST = 0;
- 123   1          for(i = 0; i < 5000; i++);  // RST低电平至少1ms
- 124   1          LCD_RST = 1;
- 125   1          for(i = 0; i < 10000; i++);  // RST释放后等待LCD稳定(至少10ms)
- 126   1          
- 127   1          // 初始化左右两半屏
- 128   1          LCD_WriteCmd(LCD_CMD_DISPLAY_ON, 0);
- 129   1          LCD_WriteCmd(LCD_CMD_DISPLAY_ON, 1);
- 130   1          LCD_WriteCmd(LCD_CMD_START_LINE | 0, 0);
- 131   1          LCD_WriteCmd(LCD_CMD_START_LINE | 0, 1);
- 132   1          
- 133   1          for(i = 0; i < 1000; i++);  // 额外稳定时间
- 134   1          
- 135   1          LCD_Clear();
- 136   1      }
- 137          
- 138          // 设置位置
- 139          void LCD_SetPos(unsigned char page, unsigned char col) {
- 140   1          unsigned char side;
- 141   1          
- 142   1          if(col < 64) {
- 143   2              side = 0;
- 144   2          } else {
- 145   2              side = 1;
- 146   2              col -= 64;
- 147   2          }
- 148   1          
- 149   1          // 确保 page 和 col 在合法范围
- 150   1          if(page > 7) page = 7;
- 151   1          if(col > 63) col = 63;
- 152   1          
- 153   1          LCD_WriteCmd(LCD_CMD_SET_X | page, side);
- 154   1          LCD_WriteCmd(LCD_CMD_SET_Y | col, side);
- 155   1      }
- 156          
- 157          // 清屏
- 158          void LCD_Clear(void) {
- 159   1          unsigned char page, col;
- 160   1          
- 161   1          for(page = 0; page < LCD_PAGES; page++) {
- 162   2              for(col = 0; col < LCD_WIDTH; col++) {
- 163   3                  LCD_SetPos(page, col);
- 164   3                  if(col < 64) {
- 165   4                      LCD_WriteData(0x00, 0);
- 166   4                  } else {
- 167   4                      LCD_WriteData(0x00, 1);
- 168   4                  }
- 169   3              }
- 170   2          }
- 171   1      }
- 172          
- 173          // 清除指定区域
- 174          void LCD_ClearArea(unsigned char page_start, unsigned char page_end, unsigned char col_start, unsigned cha
+ 117   1      }
+ 118          
+ 119          // 清屏
+ 120          void LCD_Clear(void) {
+ 121   1          unsigned char page, col;
+ 122   1          
+ 123   1          for(page = 0; page < LCD_PAGES; page++) {
+ 124   2              for(col = 0; col < LCD_WIDTH; col++) {
+ 125   3                  LCD_DrawByte(page, col, 0x00);
+ 126   3              }
+ 127   2          }
+ 128   1      }
+ 129          
+ 130          // 清除指定区域
+ 131          void LCD_ClearArea(unsigned char page_start, unsigned char page_end, unsigned char col_start, unsigned cha
              -r col_end) {
- 175   1          unsigned char page, col;
- 176   1          
- 177   1          for(page = page_start; page <= page_end; page++) {
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 01:32:58 PAGE 4   
+ 132   1          unsigned char page, col;
+ 133   1          
+ 134   1          for(page = page_start; page <= page_end; page++) {
+ 135   2              for(col = col_start; col <= col_end; col++) {
+ 136   3                  LCD_DrawByte(page, col, 0x00);
+ 137   3              }
+ 138   2          }
+ 139   1      }
+ 140          
+ 141          // 在指定位置画一个字节
+ 142          void LCD_DrawByte(unsigned char page, unsigned char col, unsigned char dat) {
+ 143   1          LCD_SetPos(page, col);
+ 144   1          if(col < 64) {
+ 145   2              LCD_WriteData(dat, 0);
+ 146   2          } else {
+ 147   2              LCD_WriteData(dat, 1);
+ 148   2          }
+ 149   1      }
+ 150          
+ 151          /* 已移除：LCD_Test 测试函数（填充屏幕），该函数在主程序中仅以注释形式存在�
+             -��
+ 152             如需测试，请临时恢复该函数或在调试时直接使用 LCD_DrawByte 循环。 */
+ 153          
+ 154          /*
+ 155          // 画点(x: 0-127, y: 0-63) - 未使用，已注释以节省内存
+ 156          void LCD_DrawPoint(unsigned char x, unsigned char y, unsigned char color) {
+ 157              unsigned char page, bit_pos, dat;
+ 158              unsigned char side;
+ 159              
+ 160              page = y / 8;
+ 161              bit_pos = y % 8;
+ 162              
+ 163              if(x < 64) {
+ 164                  side = 0;
+ 165              } else {
+ 166                  side = 1;
+ 167                  x -= 64;
+ 168              }
+ 169              
+ 170              LCD_WriteCmd(LCD_CMD_SET_X | page, side);
+ 171              LCD_WriteCmd(LCD_CMD_SET_Y | x, side);
+ 172              
+ 173              // 读-改-写
+ 174              LCD_ReadData(side);  // 空读
+ 175              dat = LCD_ReadData(side);
+ 176              
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 06:28:59 PAGE 4   
 
- 178   2              for(col = col_start; col <= col_end; col++) {
- 179   3                  LCD_SetPos(page, col);
- 180   3                  if(col < 64) {
- 181   4                      LCD_WriteData(0x00, 0);
- 182   4                  } else {
- 183   4                      LCD_WriteData(0x00, 1);
- 184   4                  }
- 185   3              }
- 186   2          }
- 187   1      }
- 188          
- 189          // 在指定位置画一个字节
- 190          void LCD_DrawByte(unsigned char page, unsigned char col, unsigned char dat) {
- 191   1          LCD_SetPos(page, col);
- 192   1          if(col < 64) {
- 193   2              LCD_WriteData(dat, 0);
- 194   2          } else {
- 195   2              LCD_WriteData(dat, 1);
- 196   2          }
- 197   1      }
- 198          
- 199          // LCD测试函数 - 填充整个屏幕
- 200          void LCD_Test(void) {
- 201   1          unsigned char page, col;
- 202   1          
- 203   1          for(page = 0; page < LCD_PAGES; page++) {
- 204   2              for(col = 0; col < LCD_WIDTH; col++) {
- 205   3                  LCD_SetPos(page, col);
- 206   3                  if(col < 64) {
- 207   4                      LCD_WriteData(0xFF, 0);  // 全亮
- 208   4                  } else {
- 209   4                      LCD_WriteData(0xFF, 1);  // 全亮
- 210   4                  }
- 211   3              }
- 212   2          }
- 213   1      }
- 214          
- 215          /*
- 216          // 画点(x: 0-127, y: 0-63) - 未使用，已注释以节省内存
- 217          void LCD_DrawPoint(unsigned char x, unsigned char y, unsigned char color) {
- 218              unsigned char page, bit_pos, dat;
- 219              unsigned char side;
- 220              
- 221              page = y / 8;
- 222              bit_pos = y % 8;
- 223              
- 224              if(x < 64) {
- 225                  side = 0;
- 226              } else {
- 227                  side = 1;
- 228                  x -= 64;
- 229              }
- 230              
- 231              LCD_WriteCmd(LCD_CMD_SET_X | page, side);
- 232              LCD_WriteCmd(LCD_CMD_SET_Y | x, side);
- 233              
- 234              // 读-改-写
- 235              LCD_ReadData(side);  // 空读
- 236              dat = LCD_ReadData(side);
- 237              
- 238              if(color) {
- 239                  dat |= (1 << bit_pos);
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 01:32:58 PAGE 5   
-
- 240              } else {
- 241                  dat &= ~(1 << bit_pos);
- 242              }
- 243              
- 244              LCD_WriteCmd(LCD_CMD_SET_Y | x, side);
- 245              LCD_WriteData(dat, side);
- 246          }
- 247          */
+ 177              if(color) {
+ 178                  dat |= (1 << bit_pos);
+ 179              } else {
+ 180                  dat &= ~(1 << bit_pos);
+ 181              }
+ 182              
+ 183              LCD_WriteCmd(LCD_CMD_SET_Y | x, side);
+ 184              LCD_WriteData(dat, side);
+ 185          }
+ 186          */
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    484    ----
+   CODE SIZE        =    337    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      12
+   DATA SIZE        =   ----      10
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

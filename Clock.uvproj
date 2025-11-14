@@ -451,6 +451,11 @@
               <FileType>5</FileType>
               <FilePath>.\display.h</FilePath>
             </File>
+            <File>
+              <FileName>board_config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\board_config.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

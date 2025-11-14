@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 1   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
@@ -62,7 +62,7 @@ line level    source
   52   1          // 秒表更新
   53   1          Stopwatch_Update();
   54   1          
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 2   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 2   
 
   55   1          // 按键扫描
   56   1          Key_Scan();
@@ -126,7 +126,7 @@ line level    source
  114   1          unsigned int year_digit;
  115   1          
  116   1          if(key == (KEY_VAL_1 | 0x10)) {
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 3   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 3   
 
  117   2              DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
  118   2              g_system_state = STATE_HOME;
@@ -190,7 +190,7 @@ line level    source
  176   3              } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
  177   3                  // 年份的各位 (个位到千位)
  178   3                  year_digit = 1;
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 4   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 4   
 
  179   3                  for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
  180   4                      year_digit *= 10;
@@ -254,7 +254,7 @@ line level    source
  238   2              g_edit_pos = 0;
  239   2              g_temp_year = g_datetime.year;
  240   2              g_temp_month = g_datetime.month;
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 5   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 5   
 
  241   2              g_temp_day = g_datetime.day;
  242   2              Display_HomePage();
@@ -318,7 +318,7 @@ line level    source
  300   3                  // 时的个位
  301   3                  tens = g_temp_hour / 10;
  302   3                  ones = g_temp_hour % 10;
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 6   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 6   
 
  303   3                  ones++;
  304   3                  if(ones > 9) ones = 0;
@@ -382,7 +382,7 @@ line level    source
  362          void Handle_Stopwatch_Keys(unsigned char key) {
  363   1          if(key == (KEY_VAL_1 | 0x10)) {
  364   2              // 长按确认键：清零
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 7   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 7   
 
  365   2              Stopwatch_Clear();
  366   2              Display_ResetStopwatch();
@@ -446,7 +446,7 @@ line level    source
  424   1          
  425   1          // 初始化LCD
  426   1          LCD_Init();
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 8   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 8   
 
  427   1          
  428   1          // 等待LCD稳定
@@ -466,7 +466,7 @@ line level    source
  442   1          Key_Init();
  443   1          Stopwatch_Init();
  444   1          Buzzer_Init();
- 445   1          BUZZER = 0; // 强制关闭蜂鸣器，防止开机误响
+ 445   1          BUZZER = BUZZER_OFF; // 强制关闭蜂鸣器，防止开机误响（使用板级宏）
  446   1          
  447   1          // 显示主页
  448   1          Display_HomePage();
@@ -510,7 +510,7 @@ line level    source
  486   5                              DateTime_SetTime(g_temp_hour, g_temp_minute, g_temp_second);
  487   5                              g_system_state = STATE_HOME;
  488   5                              g_edit_pos = 0;
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 9   
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 9   
 
  489   5                              Display_HomePage();
  490   5                          } else {
@@ -574,7 +574,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    DATA SIZE        =     13      15
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      1    ----
-C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 10  
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 06:28:59 PAGE 10  
 
 END OF MODULE INFORMATION.
 
