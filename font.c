@@ -145,17 +145,13 @@ unsigned char code Font_24x32[][96] = {
 
 // 获取字符索引
 unsigned char GetCharIndex(char c) {
-    if(c >= '0' && c <= '9') {
-        return c - '0';
-    } else if(c == ':') {
-        return 10;
-    } else if(c == '-') {
-        return 11;
-    } else if(c == '/') {
-        return 12;
-    } else if(c == '.') {
-        return 11;  // 对于24x32字体，点用索引11
-    } else {
-        return 13;  // 空格
+    if (c >= '0' && c <= '9')
+        return (unsigned char)(c - '0');
+    switch (c) {
+        case ':': return 10;
+        case '-': return 11;
+        case '/': return 12;
+        case '.': return 11; /* 对于24x32字体，点用索引11 */
+        default:  return 13; /* 空格 */
     }
 }
