@@ -2,9 +2,19 @@
 #define __BUZZER_H__
 
 #include <reg51.h>
+#include "board_config.h"
 
 // 蜂鸣器引脚
 sbit BUZZER = P2^0;
+
+// 按板级配置映射 BUZZER_ON / BUZZER_OFF
+#if BUZZER_ACTIVE_LOW
+#define BUZZER_ON  0
+#define BUZZER_OFF 1
+#else
+#define BUZZER_ON  1
+#define BUZZER_OFF 0
+#endif
 
 // 蜂鸣器状态
 extern bit g_buzzer_active;

@@ -442,7 +442,7 @@ void main(void) {
     Key_Init();
     Stopwatch_Init();
     Buzzer_Init();
-    BUZZER = 0; // 强制关闭蜂鸣器，防止开机误响
+    BUZZER = BUZZER_OFF; // 强制关闭蜂鸣器，防止开机误响（使用板级宏）
     
     // 显示主页
     Display_HomePage();
