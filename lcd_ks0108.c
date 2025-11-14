@@ -6,6 +6,22 @@ void LCD_Delay(void) {
     for(i = 0; i < 10; i++);  // 增加到10
 }
 
+// helper: 选择左右半屏
+static void LCD_Select(unsigned char side) {
+    if (side == 0) {
+        LCD_CS1 = 1;
+        LCD_CS2 = 0;
+    } else {
+        LCD_CS1 = 0;
+        LCD_CS2 = 1;
+    }
+}
+
+static void LCD_Deselect(void) {
+    LCD_CS1 = 0;
+    LCD_CS2 = 0;
+}
+
 // 检查忙状态
 void LCD_CheckBusy(unsigned char side) {
     unsigned char status;
@@ -14,14 +30,7 @@ void LCD_CheckBusy(unsigned char side) {
     LCD_DATA = 0xFF;
     LCD_DI = 0;  // 指令
     LCD_RW = 1;  // 读
-    
-    if(side == 0) {
-        LCD_CS1 = 1;
-        LCD_CS2 = 0;
-    } else {
-        LCD_CS1 = 0;
-        LCD_CS2 = 1;
-    }
+    LCD_Select(side);
     
     do {
         LCD_E = 1;
@@ -33,8 +42,7 @@ void LCD_CheckBusy(unsigned char side) {
         if(timeout > 200) break;  // 超时退出
     } while(status & 0x80);  // 检查忙标志
     
-    LCD_CS1 = 0;
-    LCD_CS2 = 0;
+    LCD_Deselect();
 }
 
 // 写命令
@@ -42,23 +50,13 @@ void LCD_WriteCmd(unsigned char cmd, unsigned char side) {
     LCD_CheckBusy(side);
     LCD_DI = 0;  // 指令
     LCD_RW = 0;  // 写
-    
-    if(side == 0) {
-        LCD_CS1 = 1;
-        LCD_CS2 = 0;
-    } else {
-        LCD_CS1 = 0;
-        LCD_CS2 = 1;
-    }
-    
+    LCD_Select(side);
     LCD_DATA = cmd;
     LCD_E = 1;
     LCD_Delay();
     LCD_E = 0;
     LCD_Delay();
-    
-    LCD_CS1 = 0;
-    LCD_CS2 = 0;
+    LCD_Deselect();
 }
 
 // 写数据
@@ -66,23 +64,13 @@ void LCD_WriteData(unsigned char dat, unsigned char side) {
     LCD_CheckBusy(side);
     LCD_DI = 1;  // 数据
     LCD_RW = 0;  // 写
-    
-    if(side == 0) {
-        LCD_CS1 = 1;
-        LCD_CS2 = 0;
-    } else {
-        LCD_CS1 = 0;
-        LCD_CS2 = 1;
-    }
-    
+    LCD_Select(side);
     LCD_DATA = dat;
     LCD_E = 1;
     LCD_Delay();
     LCD_E = 0;
     LCD_Delay();
-    
-    LCD_CS1 = 0;
-    LCD_CS2 = 0;
+    LCD_Deselect();
 }
 
 // 读数据
@@ -93,23 +81,13 @@ unsigned char LCD_ReadData(unsigned char side) {
     LCD_DATA = 0xFF;
     LCD_DI = 1;  // 数据
     LCD_RW = 1;  // 读
-    
-    if(side == 0) {
-        LCD_CS1 = 1;
-        LCD_CS2 = 0;
-    } else {
-        LCD_CS1 = 0;
-        LCD_CS2 = 1;
-    }
-    
+    LCD_Select(side);
     LCD_E = 1;
     LCD_Delay();
     dat = LCD_DATA;
     LCD_E = 0;
     LCD_Delay();
-    
-    LCD_CS1 = 0;
-    LCD_CS2 = 0;
+    LCD_Deselect();
     
     return dat;
 }
@@ -131,7 +109,6 @@ void LCD_Init(void) {
     LCD_WriteCmd(LCD_CMD_START_LINE | 0, 1);
     
     for(i = 0; i < 1000; i++);  // 额外稳定时间
-    
     LCD_Clear();
 }
 
@@ -160,12 +137,7 @@ void LCD_Clear(void) {
     
     for(page = 0; page < LCD_PAGES; page++) {
         for(col = 0; col < LCD_WIDTH; col++) {
-            LCD_SetPos(page, col);
-            if(col < 64) {
-                LCD_WriteData(0x00, 0);
-            } else {
-                LCD_WriteData(0x00, 1);
-            }
+            LCD_DrawByte(page, col, 0x00);
         }
     }
 }
@@ -176,12 +148,7 @@ void LCD_ClearArea(unsigned char page_start, unsigned char page_end, unsigned ch
     
     for(page = page_start; page <= page_end; page++) {
         for(col = col_start; col <= col_end; col++) {
-            LCD_SetPos(page, col);
-            if(col < 64) {
-                LCD_WriteData(0x00, 0);
-            } else {
-                LCD_WriteData(0x00, 1);
-            }
+            LCD_DrawByte(page, col, 0x00);
         }
     }
 }
@@ -202,12 +169,7 @@ void LCD_Test(void) {
     
     for(page = 0; page < LCD_PAGES; page++) {
         for(col = 0; col < LCD_WIDTH; col++) {
-            LCD_SetPos(page, col);
-            if(col < 64) {
-                LCD_WriteData(0xFF, 0);  // 全亮
-            } else {
-                LCD_WriteData(0xFF, 1);  // 全亮
-            }
+            LCD_DrawByte(page, col, 0xFF);
         }
     }
 }
