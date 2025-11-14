@@ -73,24 +73,9 @@ void LCD_WriteData(unsigned char dat, unsigned char side) {
     LCD_Deselect();
 }
 
-// 读数据
-unsigned char LCD_ReadData(unsigned char side) {
-    unsigned char dat;
-    
-    LCD_CheckBusy(side);
-    LCD_DATA = 0xFF;
-    LCD_DI = 1;  // 数据
-    LCD_RW = 1;  // 读
-    LCD_Select(side);
-    LCD_E = 1;
-    LCD_Delay();
-    dat = LCD_DATA;
-    LCD_E = 0;
-    LCD_Delay();
-    LCD_Deselect();
-    
-    return dat;
-}
+/* 已移除：LCD_ReadData (读数据) 实现
+   该函数在驱动外部未被调用，且内部唯一调用来自注释掉的 LCD_DrawPoint，
+   因此移除此实现以节省代码空间。 */
 
 // LCD初始化
 void LCD_Init(void) {
@@ -163,16 +148,8 @@ void LCD_DrawByte(unsigned char page, unsigned char col, unsigned char dat) {
     }
 }
 
-// LCD测试函数 - 填充整个屏幕
-void LCD_Test(void) {
-    unsigned char page, col;
-    
-    for(page = 0; page < LCD_PAGES; page++) {
-        for(col = 0; col < LCD_WIDTH; col++) {
-            LCD_DrawByte(page, col, 0xFF);
-        }
-    }
-}
+/* 已移除：LCD_Test 测试函数（填充屏幕），该函数在主程序中仅以注释形式存在。
+   如需测试，请临时恢复该函数或在调试时直接使用 LCD_DrawByte 循环。 */
 
 /*
 // 画点(x: 0-127, y: 0-63) - 未使用，已注释以节省内存

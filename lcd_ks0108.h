@@ -30,12 +30,11 @@ void LCD_Delay(void);
 void LCD_CheckBusy(unsigned char side);
 void LCD_WriteCmd(unsigned char cmd, unsigned char side);
 void LCD_WriteData(unsigned char dat, unsigned char side);
-unsigned char LCD_ReadData(unsigned char side);
 void LCD_SetPos(unsigned char page, unsigned char col);
 void LCD_Clear(void);
 void LCD_ClearArea(unsigned char page_start, unsigned char page_end, unsigned char col_start, unsigned char col_end);
 void LCD_DrawByte(unsigned char page, unsigned char col, unsigned char dat);
-void LCD_Test(void);  // 测试函数
+// LCD_ReadData 与 LCD_Test 在驱动内已删除（未被外部调用），为节省空间移除声明
 // void LCD_DrawPoint(unsigned char x, unsigned char y, unsigned char color);  // 未使用，已注释
 
 #endif

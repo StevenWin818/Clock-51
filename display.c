@@ -165,61 +165,9 @@ void Display_Char_24x32(unsigned char page, unsigned char col, char c) {
     }
 }
 
-void Display_String_8x16(unsigned char page, unsigned char col, char *str) {
-    while(*str) {
-        Display_Char_8x16(page, col, *str);
-        col += 8;
-        str++;
-    }
-}
-
-void Display_String_16x16(unsigned char page, unsigned char col, char *str) {
-    while(*str) {
-        Display_Char_16x16(page, col, *str);
-        col += 16;
-        str++;
-    }
-}
-
-void Display_String_24x32(unsigned char page, unsigned char col, char *str) {
-    while(*str) {
-        Display_Char_24x32(page, col, *str);
-        col += 24;
-        str++;
-    }
-}
-
-void Display_Number_8x16(unsigned char page, unsigned char col, unsigned int num, unsigned char digits) {
-    unsigned char i;
-    unsigned int divisor = 1;
-    unsigned char digit;
-
-    for(i = 1; i < digits; i++) {
-        divisor *= 10;
-    }
-
-    for(i = 0; i < digits; i++) {
-        digit = (num / divisor) % 10;
-        Display_Char_8x16(page, col + i * 8, digit + '0');
-        divisor /= 10;
-    }
-}
-
-void Display_Number_16x16(unsigned char page, unsigned char col, unsigned int num, unsigned char digits) {
-    unsigned char i;
-    unsigned int divisor = 1;
-    unsigned char digit;
-
-    for(i = 1; i < digits; i++) {
-        divisor *= 10;
-    }
-
-    for(i = 0; i < digits; i++) {
-        digit = (num / divisor) % 10;
-        Display_Char_16x16(page, col + i * 16, digit + '0');
-        divisor /= 10;
-    }
-}
+/* 已移除：Display_String_* 与 Display_Number_* 的实现
+   使用更小粒度的 Display_Char_* 接口在调用处拼装字符串/数字，
+   以减少未使用代码体积。 */
 
 void Display_HomePage(void) {
     unsigned int year_display;

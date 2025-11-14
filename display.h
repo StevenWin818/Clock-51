@@ -20,11 +20,9 @@ extern unsigned char data g_system_state;
 void Display_Char_8x16(unsigned char page, unsigned char col, char c);
 void Display_Char_16x16(unsigned char page, unsigned char col, char c);
 void Display_Char_24x32(unsigned char page, unsigned char col, char c);
-void Display_String_8x16(unsigned char page, unsigned char col, char *str);
-void Display_String_16x16(unsigned char page, unsigned char col, char *str);
-void Display_String_24x32(unsigned char page, unsigned char col, char *str);
-void Display_Number_8x16(unsigned char page, unsigned char col, unsigned int num, unsigned char digits);
-void Display_Number_16x16(unsigned char page, unsigned char col, unsigned int num, unsigned char digits);
+/* 以下高层字符串/数字接口已移除以减少未使用代码：
+	Display_String_8x16/16x16/24x32 与 Display_Number_8x16/16x16
+	现在由调用方使用更小粒度的 Display_Char_* 接口组合实现。 */
 
 // UI显示函数
 void Display_HomePage(void);
