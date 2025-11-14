@@ -147,23 +147,8 @@ void Display_Char_16x16(unsigned char page, unsigned char col, char c) {
     Display_Char_16x16_Custom(page, col, c, 0);
 }
 
-void Display_Char_24x32(unsigned char page, unsigned char col, char c) {
-    unsigned char i;
-    unsigned char index = GetCharIndex(c);
-
-    for(i = 0; i < 24; i++) {
-        LCD_DrawByte(page, col + i, Font_24x32[index][i]);
-    }
-    for(i = 0; i < 24; i++) {
-        LCD_DrawByte(page + 1, col + i, Font_24x32[index][i + 24]);
-    }
-    for(i = 0; i < 24; i++) {
-        LCD_DrawByte(page + 2, col + i, Font_24x32[index][i + 48]);
-    }
-    for(i = 0; i < 24; i++) {
-        LCD_DrawByte(page + 3, col + i, Font_24x32[index][i + 72]);
-    }
-}
+/* Display_Char_24x32 已移除：项目中未使用 24x32 字体渲染以节省代码空间。
+   如未来需要，可通过恢复此实现或在调用方组合多行 16x16/8x16 字体来实现。 */
 
 /* 已移除：Display_String_* 与 Display_Number_* 的实现
    使用更小粒度的 Display_Char_* 接口在调用处拼装字符串/数字，

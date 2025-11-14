@@ -8,7 +8,7 @@ extern unsigned char code Font_8x16[][16];
 extern unsigned char code Font_16x16[][32];
 
 // 24x32字体 - 大数字0-9、冒号、点
-extern unsigned char code Font_24x32[][96];
+extern unsigned char code Font_24x32[][96]; /* 注意：Display_Char_24x32 渲染函数已移除 */
 
 // 字符索引函数
 unsigned char GetCharIndex(char c);
