@@ -1,0 +1,582 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c ROM(COMPACT) OPTIMIZE(8,SPEED) PRINT(.\Listings\main.lst) TABS(2)
+                    - OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "lcd_ks0108.h"
+   3          #include "font.h"
+   4          #include "clock.h"
+   5          #include "key.h"
+   6          #include "stopwatch.h"
+   7          #include "display.h"
+   8          #include "buzzer.h"
+   9          #include "state.h"
+  10          
+  11          // 全局变量
+  12          unsigned char data g_system_state = STATE_HOME;
+  13          unsigned char data g_menu_pos = 0;     // 菜单位置: 0=日期, 1=时间, 2=秒表
+  14          unsigned char data g_edit_pos = 0;     // 编辑位置: 用于逐位编辑
+  15          unsigned char data g_refresh_counter = 0;
+  16          
+  17          // 光标超时相关变量
+  18          unsigned int data g_menu_cursor_timeout = 0; // 菜单光标超时计数（单位：10ms）
+  19          bit g_menu_cursor_visible = 1;               // 菜单光标是否显示
+  20          
+  21          // 临时设定变量
+  22          unsigned int data g_temp_year;
+  23          unsigned char data g_temp_month;
+  24          unsigned char data g_temp_day;
+  25          unsigned char data g_temp_hour;
+  26          unsigned char data g_temp_minute;
+  27          unsigned char data g_temp_second;
+  28          
+  29          static void TempTime_Tick(void) {
+  30   1          g_temp_second++;
+  31   1          if(g_temp_second >= 60) {
+  32   2              g_temp_second = 0;
+  33   2              g_temp_minute++;
+  34   2              if(g_temp_minute >= 60) {
+  35   3                  g_temp_minute = 0;
+  36   3                  g_temp_hour++;
+  37   3                  if(g_temp_hour >= 24) {
+  38   4                      g_temp_hour = 0;
+  39   4                  }
+  40   3              }
+  41   2          }
+  42   1      }
+  43          
+  44          // 定时器0中断服务程序 (合并所有10ms任务)
+  45          void Timer0_ISR(void) interrupt 1 {
+  46   1          TH0 = 0xB8;    // 重新装载初值（22.1184MHz）
+  47   1          TL0 = 0x00;
+  48   1          
+  49   1          // 时钟更新
+  50   1          Clock_Update();
+  51   1          
+  52   1          // 秒表更新
+  53   1          Stopwatch_Update();
+  54   1          
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 2   
+
+  55   1          // 按键扫描
+  56   1          Key_Scan();
+  57   1          
+  58   1          // 蜂鸣器更新
+  59   1          Buzzer_Update();
+  60   1          
+  61   1          // 刷新计数
+  62   1          g_refresh_counter++;
+  63   1      }
+  64          
+  65          // 处理主页按键
+  66          void Handle_HomePage_Keys(unsigned char key) {
+  67   1          if(key == KEY_VAL_4) {
+  68   2              // 进入菜单选择模式
+  69   2              g_system_state = STATE_MENU;
+  70   2              g_menu_pos = 0;
+  71   2              Display_HomePage();
+  72   2          }
+  73   1      }
+  74          
+  75          // 处理菜单选择按键
+  76          void Handle_Menu_Keys(unsigned char key) {
+  77   1          if(key == KEY_VAL_4) {
+  78   2              // 切换菜单项
+  79   2              g_menu_pos++;
+  80   2              if(g_menu_pos > 2) g_menu_pos = 0;
+  81   2              Display_HomePage();
+  82   2          } else if(key == KEY_VAL_1) {
+  83   2              // 确认进入选中的功能
+  84   2              if(g_menu_pos == 0) {
+  85   3                  // 进入日期设定
+  86   3                  g_system_state = STATE_DATE_SET;
+  87   3                  g_temp_year = g_datetime.year;
+  88   3                  g_temp_month = g_datetime.month;
+  89   3                  g_temp_day = g_datetime.day;
+  90   3                  g_edit_pos = 0;  // 从第一位开始编辑
+  91   3                  Display_HomePage();
+  92   3              } else if(g_menu_pos == 1) {
+  93   3                  // 进入时间设定
+  94   3                  g_system_state = STATE_TIME_SET;
+  95   3                  g_temp_hour = g_datetime.hour;
+  96   3                  g_temp_minute = g_datetime.minute;
+  97   3                  g_temp_second = g_datetime.second;
+  98   3                  g_edit_pos = 0;  // 从第一位开始编辑
+  99   3                  Display_HomePage();
+ 100   3              } else if(g_menu_pos == 2) {
+ 101   3                  // 进入秒表
+ 102   3                  g_system_state = STATE_STOPWATCH;
+ 103   3                  Display_ResetStopwatch();
+ 104   3                  Display_StopwatchPage();
+ 105   3              }
+ 106   2          }
+ 107   1      }
+ 108          
+ 109          // 处理日期设定按键 - 逐位编辑模式
+ 110          // edit_pos: 0-7 对应 YYYY-MM-DD 的8位数字（从右到左）
+ 111          //           7654 32 10
+ 112          void Handle_DateSet_Keys(unsigned char key) {
+ 113   1          unsigned char day_tens, day_ones, month_tens, month_ones;
+ 114   1          unsigned int year_digit;
+ 115   1          
+ 116   1          if(key == (KEY_VAL_1 | 0x10)) {
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 3   
+
+ 117   2              DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
+ 118   2              g_system_state = STATE_HOME;
+ 119   2              g_edit_pos = 0;
+ 120   2              Display_HomePage();
+ 121   2              return;
+ 122   2          }
+ 123   1      
+ 124   1          if(key == KEY_VAL_1) {
+ 125   2              // KEY1: 切换到下一位编辑
+ 126   2              if(g_edit_pos >= 7) {
+ 127   3                  // 最后一位确认后保存并返回主页
+ 128   3                  DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
+ 129   3                  g_system_state = STATE_HOME;
+ 130   3                  g_edit_pos = 0;
+ 131   3                  Display_HomePage();
+ 132   3              } else {
+ 133   3                  g_edit_pos++;
+ 134   3                  Display_HomePage();
+ 135   3              }
+ 136   2          } else if(key == KEY_VAL_2) {
+ 137   2              // KEY2: 当前位+1
+ 138   2              if(g_edit_pos == 0) {
+ 139   3                  // 日的个位
+ 140   3                  day_tens = g_temp_day / 10;
+ 141   3                  day_ones = g_temp_day % 10;
+ 142   3                  day_ones++;
+ 143   3                  if(day_ones > 9) day_ones = 0;
+ 144   3                  g_temp_day = day_tens * 10 + day_ones;
+ 145   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+ 146   3                      g_temp_day = 1;
+ 147   3              } else if(g_edit_pos == 1) {
+ 148   3                  // 日的十位
+ 149   3                  day_ones = g_temp_day % 10;
+ 150   3                  day_tens = g_temp_day / 10;
+ 151   3                  day_tens++;
+ 152   3                  if(day_tens > 3) day_tens = 0;
+ 153   3                  g_temp_day = day_tens * 10 + day_ones;
+ 154   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+ 155   3                      g_temp_day = 1;
+ 156   3              } else if(g_edit_pos == 2) {
+ 157   3                  // 月的个位
+ 158   3                  month_tens = g_temp_month / 10;
+ 159   3                  month_ones = g_temp_month % 10;
+ 160   3                  month_ones++;
+ 161   3                  if(month_ones > 9) month_ones = 0;
+ 162   3                  g_temp_month = month_tens * 10 + month_ones;
+ 163   3                  if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
+ 164   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+ 165   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 166   3              } else if(g_edit_pos == 3) {
+ 167   3                  // 月的十位
+ 168   3                  month_ones = g_temp_month % 10;
+ 169   3                  month_tens = g_temp_month / 10;
+ 170   3                  month_tens++;
+ 171   3                  if(month_tens > 1) month_tens = 0;
+ 172   3                  g_temp_month = month_tens * 10 + month_ones;
+ 173   3                  if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
+ 174   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+ 175   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 176   3              } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
+ 177   3                  // 年份的各位 (个位到千位)
+ 178   3                  year_digit = 1;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 4   
+
+ 179   3                  for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
+ 180   4                      year_digit *= 10;
+ 181   4                  }
+ 182   3                  g_temp_year = g_temp_year + year_digit;
+ 183   3                  if(g_temp_year > 2099) g_temp_year = 2000;
+ 184   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+ 185   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 186   3              }
+ 187   2              Display_HomePage();
+ 188   2          } else if(key == KEY_VAL_3) {
+ 189   2              // KEY3: 当前位-1
+ 190   2              if(g_edit_pos == 0) {
+ 191   3                  day_tens = g_temp_day / 10;
+ 192   3                  day_ones = g_temp_day % 10;
+ 193   3                  if(day_ones == 0) day_ones = 9;
+ 194   3                  else day_ones--;
+ 195   3                  g_temp_day = day_tens * 10 + day_ones;
+ 196   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+ 197   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 198   3              } else if(g_edit_pos == 1) {
+ 199   3                  day_ones = g_temp_day % 10;
+ 200   3                  day_tens = g_temp_day / 10;
+ 201   3                  if(day_tens == 0) day_tens = 3;
+ 202   3                  else day_tens--;
+ 203   3                  g_temp_day = day_tens * 10 + day_ones;
+ 204   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+ 205   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 206   3              } else if(g_edit_pos == 2) {
+ 207   3                  month_tens = g_temp_month / 10;
+ 208   3                  month_ones = g_temp_month % 10;
+ 209   3                  if(month_ones == 0) month_ones = 9;
+ 210   3                  else month_ones--;
+ 211   3                  g_temp_month = month_tens * 10 + month_ones;
+ 212   3                  if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
+ 213   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+ 214   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 215   3              } else if(g_edit_pos == 3) {
+ 216   3                  month_ones = g_temp_month % 10;
+ 217   3                  month_tens = g_temp_month / 10;
+ 218   3                  if(month_tens == 0) month_tens = 1;
+ 219   3                  else month_tens--;
+ 220   3                  g_temp_month = month_tens * 10 + month_ones;
+ 221   3                  if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
+ 222   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+ 223   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 224   3              } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
+ 225   3                  year_digit = 1;
+ 226   3                  for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
+ 227   4                      year_digit *= 10;
+ 228   4                  }
+ 229   3                  if(g_temp_year < 2000 + year_digit) g_temp_year = 2099;
+ 230   3                  else g_temp_year = g_temp_year - year_digit;
+ 231   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+ 232   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 233   3              }
+ 234   2              Display_HomePage();
+ 235   2          } else if(key == KEY_VAL_4) {
+ 236   2              // KEY4: 取消并返回主页
+ 237   2              g_system_state = STATE_HOME;
+ 238   2              g_edit_pos = 0;
+ 239   2              g_temp_year = g_datetime.year;
+ 240   2              g_temp_month = g_datetime.month;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 5   
+
+ 241   2              g_temp_day = g_datetime.day;
+ 242   2              Display_HomePage();
+ 243   2          }
+ 244   1      }
+ 245          
+ 246          // 处理时间设定按键 - 逐位编辑模式
+ 247          // edit_pos: 0-5 对应 HH:MM:SS 的6位数字（从右到左）
+ 248          //           54 32 10
+ 249          void Handle_TimeSet_Keys(unsigned char key) {
+ 250   1          unsigned char tens, ones;
+ 251   1          
+ 252   1          if(key == (KEY_VAL_1 | 0x10)) {
+ 253   2              DateTime_SetTime(g_temp_hour, g_temp_minute, g_temp_second);
+ 254   2              g_system_state = STATE_HOME;
+ 255   2              g_edit_pos = 0;
+ 256   2              Display_HomePage();
+ 257   2              return;
+ 258   2          }
+ 259   1      
+ 260   1          if(key == KEY_VAL_1) {
+ 261   2              // KEY1: 切换到下一位编辑
+ 262   2              if(g_edit_pos >= 5) {
+ 263   3                  DateTime_SetTime(g_temp_hour, g_temp_minute, g_temp_second);
+ 264   3                  g_system_state = STATE_HOME;
+ 265   3                  g_edit_pos = 0;
+ 266   3                  Display_HomePage();
+ 267   3              } else {
+ 268   3                  g_edit_pos++;
+ 269   3                  Display_HomePage();
+ 270   3              }
+ 271   2          } else if(key == KEY_VAL_2) {
+ 272   2              // KEY2: 当前位+1
+ 273   2              if(g_edit_pos <= 1) {
+ 274   3                  // 调整秒钟时，分钟加一，秒钟归零
+ 275   3                  g_temp_second = 0;
+ 276   3                  g_temp_minute++;
+ 277   3                  if(g_temp_minute >= 60) {
+ 278   4                      g_temp_minute = 0;
+ 279   4                      g_temp_hour++;
+ 280   4                      if(g_temp_hour >= 24) {
+ 281   5                          g_temp_hour = 0;
+ 282   5                      }
+ 283   4                  }
+ 284   3              } else if(g_edit_pos == 2) {
+ 285   3                  // 分的个位
+ 286   3                  tens = g_temp_minute / 10;
+ 287   3                  ones = g_temp_minute % 10;
+ 288   3                  ones++;
+ 289   3                  if(ones > 9) ones = 0;
+ 290   3                  g_temp_minute = tens * 10 + ones;
+ 291   3                  if(g_temp_minute >= 60) g_temp_minute = 0;
+ 292   3              } else if(g_edit_pos == 3) {
+ 293   3                  // 分的十位
+ 294   3                  ones = g_temp_minute % 10;
+ 295   3                  tens = g_temp_minute / 10;
+ 296   3                  tens++;
+ 297   3                  if(tens > 5) tens = 0;
+ 298   3                  g_temp_minute = tens * 10 + ones;
+ 299   3              } else if(g_edit_pos == 4) {
+ 300   3                  // 时的个位
+ 301   3                  tens = g_temp_hour / 10;
+ 302   3                  ones = g_temp_hour % 10;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 6   
+
+ 303   3                  ones++;
+ 304   3                  if(ones > 9) ones = 0;
+ 305   3                  g_temp_hour = tens * 10 + ones;
+ 306   3                  if(g_temp_hour >= 24) g_temp_hour = 0;
+ 307   3              } else if(g_edit_pos == 5) {
+ 308   3                  // 时的十位
+ 309   3                  ones = g_temp_hour % 10;
+ 310   3                  tens = g_temp_hour / 10;
+ 311   3                  tens++;
+ 312   3                  if(tens > 2) tens = 0;
+ 313   3                  g_temp_hour = tens * 10 + ones;
+ 314   3                  if(g_temp_hour >= 24) g_temp_hour = 0;
+ 315   3              }
+ 316   2              Display_HomePage();
+ 317   2          } else if(key == KEY_VAL_3) {
+ 318   2              // KEY3: 当前位-1
+ 319   2              if(g_edit_pos <= 1) {
+ 320   3                  // 秒钟位直接归零
+ 321   3                  g_temp_second = 0;
+ 322   3              } else if(g_edit_pos == 2) {
+ 323   3                  tens = g_temp_minute / 10;
+ 324   3                  ones = g_temp_minute % 10;
+ 325   3                  if(ones == 0) ones = 9;
+ 326   3                  else ones--;
+ 327   3                  g_temp_minute = tens * 10 + ones;
+ 328   3              } else if(g_edit_pos == 3) {
+ 329   3                  ones = g_temp_minute % 10;
+ 330   3                  tens = g_temp_minute / 10;
+ 331   3                  if(tens == 0) tens = 5;
+ 332   3                  else tens--;
+ 333   3                  g_temp_minute = tens * 10 + ones;
+ 334   3              } else if(g_edit_pos == 4) {
+ 335   3                  tens = g_temp_hour / 10;
+ 336   3                  ones = g_temp_hour % 10;
+ 337   3                  if(ones == 0) ones = 9;
+ 338   3                  else ones--;
+ 339   3                  g_temp_hour = tens * 10 + ones;
+ 340   3                  if(g_temp_hour >= 24) g_temp_hour = 23;
+ 341   3              } else if(g_edit_pos == 5) {
+ 342   3                  ones = g_temp_hour % 10;
+ 343   3                  tens = g_temp_hour / 10;
+ 344   3                  if(tens == 0) tens = 2;
+ 345   3                  else tens--;
+ 346   3                  g_temp_hour = tens * 10 + ones;
+ 347   3                  if(g_temp_hour >= 24) g_temp_hour = 23;
+ 348   3              }
+ 349   2              Display_HomePage();
+ 350   2          } else if(key == KEY_VAL_4) {
+ 351   2              // KEY4: 取消并返回主页
+ 352   2              g_system_state = STATE_HOME;
+ 353   2              g_edit_pos = 0;
+ 354   2              g_temp_hour = g_datetime.hour;
+ 355   2              g_temp_minute = g_datetime.minute;
+ 356   2              g_temp_second = g_datetime.second;
+ 357   2              Display_HomePage();
+ 358   2          }
+ 359   1      }
+ 360          
+ 361          // 处理秒表按键
+ 362          void Handle_Stopwatch_Keys(unsigned char key) {
+ 363   1          if(key == (KEY_VAL_1 | 0x10)) {
+ 364   2              // 长按确认键：清零
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 7   
+
+ 365   2              Stopwatch_Clear();
+ 366   2              Display_ResetStopwatch();
+ 367   2              Display_StopwatchPage();
+ 368   2          } else if(key == KEY_VAL_1) {
+ 369   2              // 短按确认键：启动/暂停
+ 370   2              if(g_stopwatch.state == SW_RUNNING) {
+ 371   3                  Stopwatch_Pause();
+ 372   3              } else {
+ 373   3                  Stopwatch_Start();
+ 374   3              }
+ 375   2              Display_StopwatchPage();
+ 376   2          } else if(key == KEY_VAL_2) {
+ 377   2              // 增加键：计次
+ 378   2              Stopwatch_AddLap();
+ 379   2              Display_StopwatchPage();
+ 380   2          } else if(key == KEY_VAL_3) {
+ 381   2              // 减少键：进入计次查看
+ 382   2              g_system_state = STATE_LAP_VIEW;
+ 383   2              g_lap_view_page = 0;
+ 384   2              Display_LapViewPage();
+ 385   2          } else if(key == KEY_VAL_4) {
+ 386   2              // 模式切换：返回主页
+ 387   2              g_system_state = STATE_HOME;
+ 388   2              Display_ResetStopwatch();
+ 389   2              Display_HomePage();
+ 390   2          }
+ 391   1      }
+ 392          
+ 393          // 处理计次查看按键
+ 394          void Handle_LapView_Keys(unsigned char key) {
+ 395   1          if(key == KEY_VAL_2) {
+ 396   2              // 翻页
+ 397   2              unsigned char total_pages;
+ 398   2              g_lap_view_page++;
+ 399   2              total_pages = (g_lap_count + 3) / 4;
+ 400   2              if(total_pages == 0) {
+ 401   3                  total_pages = 1;
+ 402   3              }
+ 403   2              if(g_lap_view_page >= total_pages) {
+ 404   3                  g_lap_view_page = 0;  // 循环
+ 405   3              }
+ 406   2              Display_LapViewPage();
+ 407   2          } else if(key == KEY_VAL_3) {
+ 408   2              // 返回秒表主界面
+ 409   2              g_system_state = STATE_STOPWATCH;
+ 410   2              Display_ResetStopwatch();
+ 411   2              Display_StopwatchPage();
+ 412   2          } else if(key == KEY_VAL_4) {
+ 413   2              // 退出秒表模式
+ 414   2              g_system_state = STATE_HOME;
+ 415   2              Display_ResetStopwatch();
+ 416   2              Display_HomePage();
+ 417   2          }
+ 418   1      }
+ 419          
+ 420          // 主函数
+ 421          void main(void) {
+ 422   1          unsigned char key;
+ 423   1          unsigned int i;
+ 424   1          
+ 425   1          // 初始化LCD
+ 426   1          LCD_Init();
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 8   
+
+ 427   1          
+ 428   1          // 等待LCD稳定
+ 429   1          for(i = 0; i < 10000; i++);
+ 430   1          
+ 431   1          // === 调试选项：取消注释以测试LCD ===
+ 432   1          // LCD_Test();  // 全屏填充测试
+ 433   1          // while(1);    // 停在这里观察
+ 434   1          
+ 435   1          // === 简单绘图测试 ===
+ 436   1          // LCD_DrawByte(0, 0, 0xFF);    // 左上角
+ 437   1          // LCD_DrawByte(0, 10, 0xFF);   // 第二个位置
+ 438   1          // LCD_DrawByte(3, 64, 0xFF);   // 右半屏
+ 439   1          // while(1);
+ 440   1          
+ 441   1          // 初始化其他模块（延后以避免干扰LCD）
+ 442   1          Key_Init();
+ 443   1          Stopwatch_Init();
+ 444   1          Buzzer_Init();
+ 445   1          BUZZER = 0; // 强制关闭蜂鸣器，防止开机误响
+ 446   1          
+ 447   1          // 显示主页
+ 448   1          Display_HomePage();
+ 449   1          
+ 450   1          // 最后启动时钟（定时器中断）
+ 451   1          Clock_Init();
+ 452   1          
+ 453   1          // 主循环
+ 454   1          while(1) {
+ 455   2              // 获取按键
+ 456   2              key = Key_GetPressed();
+ 457   2      
+ 458   2              // 菜单光标超时处理：有按键且在菜单状态则重置计数和显示
+ 459   2              if(g_system_state == STATE_MENU) {
+ 460   3                  if(key) {
+ 461   4                      g_menu_cursor_timeout = 0;
+ 462   4                      g_menu_cursor_visible = 1;
+ 463   4                  } else {
+ 464   4                      if(g_menu_cursor_visible) {
+ 465   5                          g_menu_cursor_timeout++;
+ 466   5                          if(g_menu_cursor_timeout >= 50000) { 
+ 467   6                              g_menu_cursor_visible = 0;
+ 468   6                              g_menu_pos = 0;
+ 469   6                              g_system_state = STATE_HOME; // 超时后直接回主页
+ 470   6                              Display_HomePage();
+ 471   6                          }
+ 472   5                      }
+ 473   4                  }
+ 474   3              } else {
+ 475   3                  g_menu_cursor_visible = 1;
+ 476   3                  g_menu_cursor_timeout = 0;
+ 477   3              }
+ 478   2      
+ 479   2              switch(g_system_state) {
+ 480   3                  case STATE_TIME_SET:
+ 481   3                      if(key == KEY_VAL_1) {
+ 482   4                          if(g_edit_pos == 0 || g_edit_pos == 1) {
+ 483   5                              g_edit_pos = 2;
+ 484   5                              Display_HomePage();
+ 485   5                          } else if(g_edit_pos >= 5) {
+ 486   5                              DateTime_SetTime(g_temp_hour, g_temp_minute, g_temp_second);
+ 487   5                              g_system_state = STATE_HOME;
+ 488   5                              g_edit_pos = 0;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 9   
+
+ 489   5                              Display_HomePage();
+ 490   5                          } else {
+ 491   5                              g_edit_pos++;
+ 492   5                              Display_HomePage();
+ 493   5                          }
+ 494   4                      } else {
+ 495   4                          Handle_TimeSet_Keys(key);
+ 496   4                      }
+ 497   3                      break;
+ 498   3                  case STATE_STOPWATCH:
+ 499   3                      Handle_Stopwatch_Keys(key);
+ 500   3                      break;
+ 501   3                  case STATE_LAP_VIEW:
+ 502   3                      Handle_LapView_Keys(key);
+ 503   3                      break;
+ 504   3                  case STATE_DATE_SET:
+ 505   3                      Handle_DateSet_Keys(key);
+ 506   3                      break;
+ 507   3                  case STATE_MENU:
+ 508   3                      Handle_Menu_Keys(key);
+ 509   3                      break;
+ 510   3                  case STATE_HOME:
+ 511   3                  default:
+ 512   3                      Handle_HomePage_Keys(key);
+ 513   3                      break;
+ 514   3              }
+ 515   2      
+ 516   2              // 定期刷新显示
+ 517   2              if(g_time_changed) {
+ 518   3                  g_time_changed = 0;
+ 519   3                  if(g_system_state == STATE_TIME_SET) {
+ 520   4                      TempTime_Tick();
+ 521   4                      Display_HomePage();
+ 522   4                      Buzzer_Check();
+ 523   4                  } else if(g_system_state == STATE_HOME || g_system_state == STATE_MENU || g_system_state == ST
+             -ATE_DATE_SET) {
+ 524   4                      Display_HomePage();
+ 525   4                      Buzzer_Check();
+ 526   4                  } else {
+ 527   4                      Buzzer_Check();
+ 528   4                  }
+ 529   3              }
+ 530   2      
+ 531   2              if(g_system_state == STATE_STOPWATCH) {
+ 532   3                  // 秒表页面刷新
+ 533   3                  if(g_refresh_counter >= 2) {   // 20ms刷新一次，提高刷新速率
+ 534   4                      g_refresh_counter = 0;
+ 535   4                      Display_StopwatchPage();
+ 536   4                  }
+ 537   3              }
+ 538   2          }
+ 539   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2059    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13      15
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+C51 COMPILER V9.60.7.0   MAIN                                                              11/15/2025 02:40:56 PAGE 10  
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

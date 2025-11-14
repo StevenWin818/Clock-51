@@ -1,0 +1,10 @@
+".\Objects\buzzer.obj",
+".\Objects\clock.obj",
+".\Objects\display.obj",
+".\Objects\font.obj",
+".\Objects\key.obj",
+".\Objects\lcd_ks0108.obj",
+".\Objects\main.obj",
+".\Objects\stopwatch.obj" 
+TO ".\Objects\Clock" 
+PRINT(".\Listings\Clock.m51") RAMSIZE(256) 

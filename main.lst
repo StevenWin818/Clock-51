@@ -1,0 +1,370 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              11/14/2025 20:53:37 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\main.lst) OBJ
+                    -ECT(.\main.obj)
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "lcd_ks0108.h"
+   3          #include "font.h"
+   4          #include "clock.h"
+   5          #include "key.h"
+   6          #include "stopwatch.h"
+   7          #include "display.h"
+   8          #include "buzzer.h"
+   9          
+  10          // 系统状态定义
+  11          #define STATE_HOME          0  // 主页
+  12          #define STATE_MENU          1  // 菜单选择
+  13          #define STATE_DATE_SET      2  // 日期设定
+  14          #define STATE_TIME_SET      3  // 时间设定
+  15          #define STATE_STOPWATCH     4  // 秒表
+  16          #define STATE_LAP_VIEW      5  // 计次查看
+  17          
+  18          // 全局变量 - 优化存储分配
+  19          // 将多个小变量打包到一个字节中以节省DATA空间
+  20          unsigned char data g_state_flags = 0;  // bit0-2: system_state(0-7), bit3-4: menu_pos(0-3), bit5-6: cursor
+             -_pos(0-3)
+  21          unsigned char data g_refresh_counter = 0;
+  22          
+  23          // 位域访问宏
+  24          #define g_system_state   (g_state_flags & 0x07)
+  25          #define SET_STATE(s)     (g_state_flags = (g_state_flags & 0xF8) | (s))
+  26          #define g_menu_pos       ((g_state_flags >> 3) & 0x03)
+  27          #define SET_MENU_POS(p)  (g_state_flags = (g_state_flags & 0xE7) | ((p) << 3))
+  28          #define g_cursor_pos     ((g_state_flags >> 5) & 0x03)
+  29          #define SET_CURSOR_POS(p)(g_state_flags = (g_state_flags & 0x1F) | ((p) << 5))
+  30          
+  31          // 临时设定变量
+  32          unsigned int data g_temp_year;
+  33          unsigned char data g_temp_month;
+  34          unsigned char data g_temp_day;
+  35          unsigned char data g_temp_hour;
+  36          unsigned char data g_temp_minute;
+  37          unsigned char data g_temp_second;
+  38          
+  39          // 定时器0中断服务程序 (合并所有10ms任务)
+  40          void Timer0_ISR(void) interrupt 1 {
+  41   1          TH0 = 0xDC;    // 重新装载初值
+  42   1          TL0 = 0x00;
+  43   1          
+  44   1          // 时钟更新
+  45   1          Clock_Update();
+  46   1          
+  47   1          // 秒表更新
+  48   1          Stopwatch_Update();
+  49   1          
+  50   1          // 按键扫描
+  51   1          Key_Scan();
+  52   1          
+  53   1          // 蜂鸣器更新
+C51 COMPILER V9.60.7.0   MAIN                                                              11/14/2025 20:53:37 PAGE 2   
+
+  54   1          Buzzer_Update();
+  55   1          
+  56   1          // 刷新计数
+  57   1          g_refresh_counter++;
+  58   1      }
+  59          
+  60          // 处理主页按键
+  61          void Handle_HomePage_Keys(unsigned char key) {
+  62   1          if(key == KEY_VAL_4) {
+  63   2              // 进入菜单选择模式
+  64   2              SET_STATE(STATE_MENU);
+  65   2              SET_MENU_POS(0);
+  66   2              Display_HomeMenu(g_menu_pos);
+  67   2          }
+  68   1      }
+  69          
+  70          // 处理菜单选择按键
+  71          void Handle_Menu_Keys(unsigned char key) {
+  72   1          if(key == KEY_VAL_4) {
+  73   2              // 切换菜单项
+  74   2              unsigned char pos = g_menu_pos + 1;
+  75   2              if(pos > 2) pos = 0;
+  76   2              SET_MENU_POS(pos);
+  77   2              Display_HomeMenu(g_menu_pos);
+  78   2          } else if(key == KEY_VAL_1) {
+  79   2              // 确认进入选中的功能
+  80   2              if(g_menu_pos == 0) {
+  81   3                  // 进入日期设定
+  82   3                  SET_STATE(STATE_DATE_SET);
+  83   3                  g_temp_year = g_datetime.year;
+  84   3                  g_temp_month = g_datetime.month;
+  85   3                  g_temp_day = g_datetime.day;
+  86   3                  SET_CURSOR_POS(0);
+  87   3                  Display_DateSetPage(g_cursor_pos);
+  88   3              } else if(g_menu_pos == 1) {
+  89   3                  // 进入时间设定
+  90   3                  SET_STATE(STATE_TIME_SET);
+  91   3                  g_temp_hour = g_datetime.hour;
+  92   3                  g_temp_minute = g_datetime.minute;
+  93   3                  g_temp_second = g_datetime.second;
+  94   3                  SET_CURSOR_POS(0);
+  95   3                  Display_TimeSetPage(g_cursor_pos);
+  96   3              } else if(g_menu_pos == 2) {
+  97   3                  // 进入秒表
+  98   3                  SET_STATE(STATE_STOPWATCH);
+  99   3                  Display_ResetStopwatch();
+ 100   3                  Display_StopwatchPage();
+ 101   3              }
+ 102   2          }
+ 103   1      }
+ 104          
+ 105          // 处理日期设定按键
+ 106          void Handle_DateSet_Keys(unsigned char key) {
+ 107   1          if(key == KEY_VAL_1) {
+ 108   2              // 确认键，切换到下一位或保存
+ 109   2              unsigned char pos = g_cursor_pos + 1;
+ 110   2              if(pos >= 3) {
+ 111   3                  // 保存日期并进入时间设定
+ 112   3                  DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
+ 113   3                  SET_STATE(STATE_TIME_SET);
+ 114   3                  g_temp_hour = g_datetime.hour;
+ 115   3                  g_temp_minute = g_datetime.minute;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/14/2025 20:53:37 PAGE 3   
+
+ 116   3                  g_temp_second = g_datetime.second;
+ 117   3                  SET_CURSOR_POS(0);
+ 118   3                  Display_TimeSetPage(g_cursor_pos);
+ 119   3              } else {
+ 120   3                  SET_CURSOR_POS(pos);
+ 121   3                  Display_DateSetPage(g_cursor_pos);
+ 122   3              }
+ 123   2          } else if(key == KEY_VAL_2) {
+ 124   2              // 增加键
+ 125   2              if(g_cursor_pos == 0) {
+ 126   3                  g_temp_year++;
+ 127   3                  if(g_temp_year > 2099) g_temp_year = 2000;
+ 128   3              } else if(g_cursor_pos == 1) {
+ 129   3                  g_temp_month++;
+ 130   3                  if(g_temp_month > 12) g_temp_month = 1;
+ 131   3              } else if(g_cursor_pos == 2) {
+ 132   3                  g_temp_day++;
+ 133   3                  if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month)) 
+ 134   3                      g_temp_day = 1;
+ 135   3              }
+ 136   2              Display_DateSetPage(g_cursor_pos);
+ 137   2          } else if(key == KEY_VAL_3) {
+ 138   2              // 减少键
+ 139   2              if(g_cursor_pos == 0) {
+ 140   3                  if(g_temp_year <= 2000) g_temp_year = 2099;
+ 141   3                  else g_temp_year--;
+ 142   3              } else if(g_cursor_pos == 1) {
+ 143   3                  if(g_temp_month <= 1) g_temp_month = 12;
+ 144   3                  else g_temp_month--;
+ 145   3              } else if(g_cursor_pos == 2) {
+ 146   3                  if(g_temp_day <= 1) 
+ 147   3                      g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+ 148   3                  else g_temp_day--;
+ 149   3              }
+ 150   2              Display_DateSetPage(g_cursor_pos);
+ 151   2          } else if(key == KEY_VAL_4) {
+ 152   2              // 模式切换，退出不保存
+ 153   2              SET_STATE(STATE_HOME);
+ 154   2              Display_HomePage();  // 重新显示主页
+ 155   2              Display_HomeMenu(255);  // 清除所有光标
+ 156   2          }
+ 157   1      }
+ 158          
+ 159          // 处理时间设定按键
+ 160          void Handle_TimeSet_Keys(unsigned char key) {
+ 161   1          if(key == KEY_VAL_1) {
+ 162   2              // 确认键
+ 163   2              unsigned char pos = g_cursor_pos + 1;
+ 164   2              if(pos >= 3) {
+ 165   3                  // 保存时间并返回主页
+ 166   3                  DateTime_SetTime(g_temp_hour, g_temp_minute, g_temp_second);
+ 167   3                  SET_STATE(STATE_HOME);
+ 168   3                  Display_HomePage();
+ 169   3                  Display_HomeMenu(255);  // 清除所有光标
+ 170   3              } else {
+ 171   3                  SET_CURSOR_POS(pos);
+ 172   3                  Display_TimeSetPage(g_cursor_pos);
+ 173   3              }
+ 174   2          } else if(key == KEY_VAL_2) {
+ 175   2              // 增加键
+ 176   2              if(g_cursor_pos == 0) {
+ 177   3                  g_temp_hour++;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/14/2025 20:53:37 PAGE 4   
+
+ 178   3                  if(g_temp_hour >= 24) g_temp_hour = 0;
+ 179   3              } else if(g_cursor_pos == 1) {
+ 180   3                  g_temp_minute++;
+ 181   3                  if(g_temp_minute >= 60) g_temp_minute = 0;
+ 182   3              } else if(g_cursor_pos == 2) {
+ 183   3                  // 秒位：增加键使分钟+1并设定为00秒
+ 184   3                  g_temp_minute++;
+ 185   3                  if(g_temp_minute >= 60) g_temp_minute = 0;
+ 186   3                  g_temp_second = 0;
+ 187   3              }
+ 188   2              Display_TimeSetPage(g_cursor_pos);
+ 189   2          } else if(key == KEY_VAL_3) {
+ 190   2              // 减少键
+ 191   2              if(g_cursor_pos == 0) {
+ 192   3                  if(g_temp_hour == 0) g_temp_hour = 23;
+ 193   3                  else g_temp_hour--;
+ 194   3              } else if(g_cursor_pos == 1) {
+ 195   3                  if(g_temp_minute == 0) g_temp_minute = 59;
+ 196   3                  else g_temp_minute--;
+ 197   3              } else if(g_cursor_pos == 2) {
+ 198   3                  // 秒位：减少键立刻设定为00秒
+ 199   3                  g_temp_second = 0;
+ 200   3              }
+ 201   2              Display_TimeSetPage(g_cursor_pos);
+ 202   2          } else if(key == KEY_VAL_4) {
+ 203   2              // 模式切换
+ 204   2              SET_STATE(STATE_HOME);
+ 205   2              Display_HomePage();
+ 206   2              Display_HomeMenu(255);  // 清除所有光标
+ 207   2          }
+ 208   1      }
+ 209          
+ 210          // 处理秒表按键
+ 211          void Handle_Stopwatch_Keys(unsigned char key) {
+ 212   1          if(key == (KEY_VAL_1 | 0x10)) {
+ 213   2              // 长按确认键：清零
+ 214   2              Stopwatch_Clear();
+ 215   2              Display_StopwatchPage();
+ 216   2          } else if(key == KEY_VAL_1) {
+ 217   2              // 短按确认键：启动/暂停
+ 218   2              if(g_stopwatch.state == SW_RUNNING) {
+ 219   3                  Stopwatch_Pause();
+ 220   3              } else {
+ 221   3                  Stopwatch_Start();
+ 222   3              }
+ 223   2          } else if(key == KEY_VAL_2) {
+ 224   2              // 增加键：计次
+ 225   2              if(g_stopwatch.state == SW_RUNNING) {
+ 226   3                  Stopwatch_AddLap();
+ 227   3                  Display_StopwatchPage();
+ 228   3              }
+ 229   2          } else if(key == KEY_VAL_3) {
+ 230   2              // 减少键：切换到计次查看
+ 231   2              if(g_lap_count > 0) {
+ 232   3                  SET_STATE(STATE_LAP_VIEW);
+ 233   3                  g_lap_view_page = 0;
+ 234   3                  Display_LapViewPage();
+ 235   3              }
+ 236   2          } else if(key == KEY_VAL_4) {
+ 237   2              // 模式切换：返回主页
+ 238   2              SET_STATE(STATE_HOME);
+ 239   2              Display_HomePage();
+C51 COMPILER V9.60.7.0   MAIN                                                              11/14/2025 20:53:37 PAGE 5   
+
+ 240   2          }
+ 241   1      }
+ 242          
+ 243          // 处理计次查看按键
+ 244          void Handle_LapView_Keys(unsigned char key) {
+ 245   1          if(key == KEY_VAL_2) {
+ 246   2              // 翻页
+ 247   2              g_lap_view_page++;
+ 248   2              if(g_lap_view_page >= (g_lap_count + 3) / 4) {
+ 249   3                  g_lap_view_page = 0;  // 循环
+ 250   3              }
+ 251   2              Display_LapViewPage();
+ 252   2          } else if(key == KEY_VAL_3 || key == KEY_VAL_4) {
+ 253   2              // 返回秒表
+ 254   2              SET_STATE(STATE_STOPWATCH);
+ 255   2              Display_StopwatchPage();
+ 256   2          }
+ 257   1      }
+ 258          
+ 259          // 主函数
+ 260          void main(void) {
+ 261   1          unsigned char key;
+ 262   1          unsigned int i;
+ 263   1          
+ 264   1          // 初始化LCD
+ 265   1          LCD_Init();
+ 266   1          
+ 267   1          // 等待LCD稳定
+ 268   1          for(i = 0; i < 10000; i++);
+ 269   1          
+ 270   1          // === 调试选项：取消注释以测试LCD ===
+ 271   1          // LCD_Test();  // 全屏填充测试
+ 272   1          // while(1);    // 停在这里观察
+ 273   1          
+ 274   1          // === 简单绘图测试 ===
+ 275   1          // LCD_DrawByte(0, 0, 0xFF);    // 左上角
+ 276   1          // LCD_DrawByte(0, 10, 0xFF);   // 第二个位置
+ 277   1          // LCD_DrawByte(3, 64, 0xFF);   // 右半屏
+ 278   1          // while(1);
+ 279   1          
+ 280   1          // 初始化其他模块（延后以避免干扰LCD）
+ 281   1          Key_Init();
+ 282   1          Stopwatch_Init();
+ 283   1          Buzzer_Init();
+ 284   1          
+ 285   1          // 显示主页
+ 286   1          Display_HomePage();
+ 287   1          
+ 288   1          // 最后启动时钟（定时器中断）
+ 289   1          Clock_Init();
+ 290   1          
+ 291   1          // 主循环
+ 292   1          while(1) {
+ 293   2              // 获取按键
+ 294   2              key = Key_GetPressed();
+ 295   2              
+ 296   2              // 根据状态处理按键
+ 297   2              if(key != KEY_VAL_NONE) {
+ 298   3                  switch(g_system_state) {
+ 299   4                      case STATE_HOME:
+ 300   4                          Handle_HomePage_Keys(key);
+ 301   4                          break;
+C51 COMPILER V9.60.7.0   MAIN                                                              11/14/2025 20:53:37 PAGE 6   
+
+ 302   4                      case STATE_MENU:
+ 303   4                          Handle_Menu_Keys(key);
+ 304   4                          break;
+ 305   4                      case STATE_DATE_SET:
+ 306   4                          Handle_DateSet_Keys(key);
+ 307   4                          break;
+ 308   4                      case STATE_TIME_SET:
+ 309   4                          Handle_TimeSet_Keys(key);
+ 310   4                          break;
+ 311   4                      case STATE_STOPWATCH:
+ 312   4                          Handle_Stopwatch_Keys(key);
+ 313   4                          break;
+ 314   4                      case STATE_LAP_VIEW:
+ 315   4                          Handle_LapView_Keys(key);
+ 316   4                          break;
+ 317   4                  }
+ 318   3              }
+ 319   2              
+ 320   2              // 定期刷新显示
+ 321   2              if(g_system_state == STATE_HOME) {
+ 322   3                  if(g_time_changed) {
+ 323   4                      g_time_changed = 0;
+ 324   4                      Display_HomePage();
+ 325   4                      Buzzer_Check();  // 检查报时
+ 326   4                  }
+ 327   3              } else if(g_system_state == STATE_STOPWATCH) {
+ 328   3                  // 秒表页面刷新
+ 329   3                  if(g_refresh_counter >= 20) {  // 200ms刷新一次,减少闪烁
+ 330   4                      g_refresh_counter = 0;
+ 331   4                      Display_StopwatchPage();
+ 332   4                  }
+ 333   3              }
+ 334   2          }
+ 335   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1044    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       9
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
