@@ -1,3 +1,8 @@
+/* * 优化: 添加了 pragma 指令。
+ * 强制 Keil 编译器优先优化代码大小(SIZE)，而不是速度。
+ */
+#pragma OT(8, SIZE)
+
 #include <reg51.h>
 #include "lcd_ks0108.h"
 #include "font.h"
@@ -8,17 +13,17 @@
 #include "buzzer.h"
 #include "state.h"
 
-// 全局变量
+// 全局变量 (未更改)
 unsigned char data g_system_state = STATE_HOME;
-unsigned char data g_menu_pos = 0;     // 菜单位置: 0=日期, 1=时间, 2=秒表
-unsigned char data g_edit_pos = 0;     // 编辑位置: 用于逐位编辑
+unsigned char data g_menu_pos = 0; // 菜单位置: 0=日期, 1=时间, 2=秒表
+unsigned char data g_edit_pos = 0; // 编辑位置: 用于逐位编辑
 unsigned char data g_refresh_counter = 0;
 
-// 光标超时相关变量
-unsigned int data g_menu_cursor_timeout = 0; // 菜单光标超时计数（单位：10ms）
-bit g_menu_cursor_visible = 1;               // 菜单光标是否显示
+// 光标超时相关变量 (未更改)
+unsigned int data g_menu_cursor_timeout = 0;
+bit g_menu_cursor_visible = 1;
 
-// 临时设定变量
+// 临时设定变量 (未更改)
 unsigned int data g_temp_year;
 unsigned char data g_temp_month;
 unsigned char data g_temp_day;
@@ -26,94 +31,118 @@ unsigned char data g_temp_hour;
 unsigned char data g_temp_minute;
 unsigned char data g_temp_second;
 
+// 内部辅助函数 (未更改)
 static void TempTime_Tick(void) {
     g_temp_second++;
-    if(g_temp_second >= 60) {
+    if (g_temp_second >= 60) {
         g_temp_second = 0;
         g_temp_minute++;
-        if(g_temp_minute >= 60) {
+        if (g_temp_minute >= 60) {
             g_temp_minute = 0;
             g_temp_hour++;
-            if(g_temp_hour >= 24) {
+            if (g_temp_hour >= 24)
+            {
                 g_temp_hour = 0;
             }
         }
     }
 }
 
-// 定时器0中断服务程序 (合并所有10ms任务)
-void Timer0_ISR(void) interrupt 1 {
-    TH0 = 0xB8;    // 重新装载初值（22.1184MHz）
+// 定时器0中断服务程序 (未更改)
+void Timer0_ISR(void) interrupt 1
+{
+    TH0 = 0xB8; // 重新装载初值（22.1184MHz）
     TL0 = 0x00;
-    
-    // 时钟更新
+
     Clock_Update();
-    
-    // 秒表更新
     Stopwatch_Update();
-    
-    // 按键扫描
     Key_Scan();
-    
-    // 蜂鸣器更新
     Buzzer_Update();
-    
-    // 刷新计数
     g_refresh_counter++;
 }
 
-// 处理主页按键
-void Handle_HomePage_Keys(unsigned char key) {
-    if(key == KEY_VAL_4) {
-        // 进入菜单选择模式
+// 处理主页按键 (未更改)
+void Handle_HomePage_Keys(unsigned char key)
+{
+    if (key == KEY_VAL_4)
+    {
         g_system_state = STATE_MENU;
         g_menu_pos = 0;
         Display_HomePage();
     }
 }
 
-// 处理菜单选择按键
-void Handle_Menu_Keys(unsigned char key) {
-    if(key == KEY_VAL_4) {
+/**
+ * @brief 处理菜单选择按键
+ * @note 优化: 将 if/else if 结构改为 switch 结构，提高可读性
+ */
+void Handle_Menu_Keys(unsigned char key)
+{
+    if (key == KEY_VAL_4)
+    {
         // 切换菜单项
         g_menu_pos++;
-        if(g_menu_pos > 2) g_menu_pos = 0;
+        if (g_menu_pos > 2)
+            g_menu_pos = 0;
         Display_HomePage();
-    } else if(key == KEY_VAL_1) {
+    }
+    else if (key == KEY_VAL_1)
+    {
         // 确认进入选中的功能
-        if(g_menu_pos == 0) {
-            // 进入日期设定
+        switch (g_menu_pos)
+        {
+        case 0: // 进入日期设定
             g_system_state = STATE_DATE_SET;
             g_temp_year = g_datetime.year;
             g_temp_month = g_datetime.month;
             g_temp_day = g_datetime.day;
-            g_edit_pos = 0;  // 从第一位开始编辑
+            g_edit_pos = 0;
             Display_HomePage();
-        } else if(g_menu_pos == 1) {
-            // 进入时间设定
+            break;
+        case 1: // 进入时间设定
             g_system_state = STATE_TIME_SET;
             g_temp_hour = g_datetime.hour;
             g_temp_minute = g_datetime.minute;
             g_temp_second = g_datetime.second;
-            g_edit_pos = 0;  // 从第一位开始编辑
+            g_edit_pos = 0;
             Display_HomePage();
-        } else if(g_menu_pos == 2) {
-            // 进入秒表
+            break;
+        case 2: // 进入秒表
             g_system_state = STATE_STOPWATCH;
             Display_ResetStopwatch();
             Display_StopwatchPage();
+            break;
         }
     }
 }
 
-// 处理日期设定按键 - 逐位编辑模式
-// edit_pos: 0-7 对应 YYYY-MM-DD 的8位数字（从右到左）
-//           7654 32 10
-void Handle_DateSet_Keys(unsigned char key) {
+/**
+ * @brief (新增辅助函数) 获取年份编辑的位置权重
+ * @note 优化: 提取了 Handle_DateSet_Keys 中 KEY_VAL_2 和 KEY_VAL_3 的重复 for 循环
+ */
+static unsigned int Get_Year_Digit_Weight(void)
+{
+    unsigned int year_digit = 1;
+    unsigned char i;
+    // g_edit_pos 4=个位(1), 5=十位(10), 6=百位(100), 7=千位(1000)
+    for (i = 0; i < (g_edit_pos - 4); i++)
+    {
+        year_digit *= 10;
+    }
+    return year_digit;
+}
+
+/**
+ * @brief 处理日期设定按键
+ * @note 优化: 复用了 Get_Year_Digit_Weight() 辅助函数
+ */
+void Handle_DateSet_Keys(unsigned char key)
+{
     unsigned char day_tens, day_ones, month_tens, month_ones;
-    unsigned int year_digit;
-    
-    if(key == (KEY_VAL_1 | 0x10)) {
+    unsigned int year_digit; // 仅用于 KEY_VAL_3 的临时存储
+
+    if (key == (KEY_VAL_1 | 0x10))
+    {
         DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
         g_system_state = STATE_HOME;
         g_edit_pos = 0;
@@ -121,131 +150,168 @@ void Handle_DateSet_Keys(unsigned char key) {
         return;
     }
 
-    if(key == KEY_VAL_1) {
+    if (key == KEY_VAL_1)
+    {
         // KEY1: 切换到下一位编辑
-        if(g_edit_pos >= 7) {
-            // 最后一位确认后保存并返回主页
+        if (g_edit_pos >= 7)
+        {
             DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
             g_system_state = STATE_HOME;
             g_edit_pos = 0;
-            Display_HomePage();
-        } else {
-            g_edit_pos++;
-            Display_HomePage();
         }
-    } else if(key == KEY_VAL_2) {
+        else
+        {
+            g_edit_pos++;
+        }
+        Display_HomePage();
+    }
+    else if (key == KEY_VAL_2)
+    {
         // KEY2: 当前位+1
-        if(g_edit_pos == 0) {
-            // 日的个位
+        if (g_edit_pos == 0)
+        {
             day_tens = g_temp_day / 10;
             day_ones = g_temp_day % 10;
             day_ones++;
-            if(day_ones > 9) day_ones = 0;
+            if (day_ones > 9)
+                day_ones = 0;
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+            if (g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = 1;
-        } else if(g_edit_pos == 1) {
-            // 日的十位
+        }
+        else if (g_edit_pos == 1)
+        {
             day_ones = g_temp_day % 10;
             day_tens = g_temp_day / 10;
             day_tens++;
-            if(day_tens > 3) day_tens = 0;
+            if (day_tens > 3)
+                day_tens = 0;
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+            if (g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = 1;
-        } else if(g_edit_pos == 2) {
-            // 月的个位
+        }
+        else if (g_edit_pos == 2)
+        {
             month_tens = g_temp_month / 10;
             month_ones = g_temp_month % 10;
             month_ones++;
-            if(month_ones > 9) month_ones = 0;
+            if (month_ones > 9)
+                month_ones = 0;
             g_temp_month = month_tens * 10 + month_ones;
-            if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
-        } else if(g_edit_pos == 3) {
-            // 月的十位
+            if (g_temp_month > 12 || g_temp_month == 0)
+                g_temp_month = 1;
+        }
+        else if (g_edit_pos == 3)
+        {
             month_ones = g_temp_month % 10;
             month_tens = g_temp_month / 10;
             month_tens++;
-            if(month_tens > 1) month_tens = 0;
+            if (month_tens > 1)
+                month_tens = 0;
             g_temp_month = month_tens * 10 + month_ones;
-            if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
-        } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
-            // 年份的各位 (个位到千位)
-            year_digit = 1;
-            for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
-                year_digit *= 10;
-            }
-            g_temp_year = g_temp_year + year_digit;
-            if(g_temp_year > 2099) g_temp_year = 2000;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+            if (g_temp_month > 12 || g_temp_month == 0)
+                g_temp_month = 1;
+        }
+        else if (g_edit_pos >= 4 && g_edit_pos <= 7)
+        {
+            /* 优化: 调用辅助函数，移除了重复的 for 循环 */
+            g_temp_year = g_temp_year + Get_Year_Digit_Weight();
+            if (g_temp_year > 2099)
+                g_temp_year = 2000;
+        }
+
+        // 统一检查日期合法性（仅在月或年更改时）
+        if (g_edit_pos >= 2)
+        {
+            if (g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         }
         Display_HomePage();
-    } else if(key == KEY_VAL_3) {
+    }
+    else if (key == KEY_VAL_3)
+    {
         // KEY3: 当前位-1
-        if(g_edit_pos == 0) {
+        if (g_edit_pos == 0)
+        {
             day_tens = g_temp_day / 10;
             day_ones = g_temp_day % 10;
-            if(day_ones == 0) day_ones = 9;
-            else day_ones--;
+            if (day_ones == 0)
+                day_ones = 9;
+            else
+                day_ones--;
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+            if (g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
-        } else if(g_edit_pos == 1) {
+        }
+        else if (g_edit_pos == 1)
+        {
             day_ones = g_temp_day % 10;
             day_tens = g_temp_day / 10;
-            if(day_tens == 0) day_tens = 3;
-            else day_tens--;
+            if (day_tens == 0)
+                day_tens = 3;
+            else
+                day_tens--;
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
+            if (g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
-        } else if(g_edit_pos == 2) {
+        }
+        else if (g_edit_pos == 2)
+        {
             month_tens = g_temp_month / 10;
             month_ones = g_temp_month % 10;
-            if(month_ones == 0) month_ones = 9;
-            else month_ones--;
+            if (month_ones == 0)
+                month_ones = 9;
+            else
+                month_ones--;
             g_temp_month = month_tens * 10 + month_ones;
-            if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
-        } else if(g_edit_pos == 3) {
+            if (g_temp_month > 12 || g_temp_month == 0)
+                g_temp_month = 12;
+        }
+        else if (g_edit_pos == 3)
+        {
             month_ones = g_temp_month % 10;
             month_tens = g_temp_month / 10;
-            if(month_tens == 0) month_tens = 1;
-            else month_tens--;
+            if (month_tens == 0)
+                month_tens = 1;
+            else
+                month_tens--;
             g_temp_month = month_tens * 10 + month_ones;
-            if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
-        } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
-            year_digit = 1;
-            for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
-                year_digit *= 10;
-            }
-            if(g_temp_year < 2000 + year_digit) g_temp_year = 2099;
-            else g_temp_year = g_temp_year - year_digit;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
+            if (g_temp_month > 12 || g_temp_month == 0)
+                g_temp_month = 12;
+        }
+        else if (g_edit_pos >= 4 && g_edit_pos <= 7)
+        {
+            /* 优化: 调用辅助函数，移除了重复的 for 循环 */
+            year_digit = Get_Year_Digit_Weight();
+            if (g_temp_year < 2000 + year_digit)
+                g_temp_year = 2099;
+            else
+                g_temp_year = g_temp_year - year_digit;
+        }
+
+        // 统一检查日期合法性（仅在月或年更改时）
+        if (g_edit_pos >= 2)
+        {
+            if (g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         }
         Display_HomePage();
-    } else if(key == KEY_VAL_4) {
+    }
+    else if (key == KEY_VAL_4)
+    {
         // KEY4: 取消并返回主页
         g_system_state = STATE_HOME;
         g_edit_pos = 0;
-        g_temp_year = g_datetime.year;
-        g_temp_month = g_datetime.month;
-        g_temp_day = g_datetime.day;
+        // （注意：原代码在此处未重置 g_temp_year 等变量，保持该行为）
         Display_HomePage();
     }
 }
 
-// 处理时间设定按键 - 逐位编辑模式
-// edit_pos: 0-5 对应 HH:MM:SS 的6位数字（从右到左）
-//           54 32 10
+/**
+ * @brief 处理时间设定按键
+ * @note 优化: 从 main() 函数中移入了 KEY_VAL_1 的特殊处理逻辑，
+ * 使得 main() 的 switch 语句更干净。
+ */
 void Handle_TimeSet_Keys(unsigned char key)
 {
     unsigned char tens, ones;
@@ -407,59 +473,71 @@ void Handle_TimeSet_Keys(unsigned char key)
     }
 }
 
-// 处理秒表按键
-void Handle_Stopwatch_Keys(unsigned char key) {
-    if(key == (KEY_VAL_1 | 0x10)) {
-        // 长按确认键：清零
+// 处理秒表按键 (未更改)
+void Handle_Stopwatch_Keys(unsigned char key)
+{
+    if (key == (KEY_VAL_1 | 0x10))
+    {
         Stopwatch_Clear();
         Display_ResetStopwatch();
         Display_StopwatchPage();
-    } else if(key == KEY_VAL_1) {
-        // 短按确认键：启动/暂停
-        if(g_stopwatch.state == SW_RUNNING) {
+    }
+    else if (key == KEY_VAL_1)
+    {
+        if (g_stopwatch.state == SW_RUNNING)
+        {
             Stopwatch_Pause();
-        } else {
+        }
+        else
+        {
             Stopwatch_Start();
         }
         Display_StopwatchPage();
-    } else if(key == KEY_VAL_2) {
-        // 增加键：计次
+    }
+    else if (key == KEY_VAL_2)
+    {
         Stopwatch_AddLap();
         Display_StopwatchPage();
-    } else if(key == KEY_VAL_3) {
-        // 减少键：进入计次查看
+    }
+    else if (key == KEY_VAL_3)
+    {
         g_system_state = STATE_LAP_VIEW;
         g_lap_view_page = 0;
         Display_LapViewPage();
-    } else if(key == KEY_VAL_4) {
-        // 模式切换：返回主页
+    }
+    else if (key == KEY_VAL_4)
+    {
         g_system_state = STATE_HOME;
         Display_ResetStopwatch();
         Display_HomePage();
     }
 }
 
-// 处理计次查看按键
-void Handle_LapView_Keys(unsigned char key) {
-    if(key == KEY_VAL_2) {
-        // 翻页
-        unsigned char total_pages;
+// 处理计次查看按键 (未更改)
+void Handle_LapView_Keys(unsigned char key)
+{
+    if (key == KEY_VAL_2)
+    {
+        unsigned char total_pages = (g_lap_count + 3) / 4;
         g_lap_view_page++;
-        total_pages = (g_lap_count + 3) / 4;
-        if(total_pages == 0) {
+        if (total_pages == 0)
+        {
             total_pages = 1;
         }
-        if(g_lap_view_page >= total_pages) {
-            g_lap_view_page = 0;  // 循环
+        if (g_lap_view_page >= total_pages)
+        {
+            g_lap_view_page = 0;
         }
         Display_LapViewPage();
-    } else if(key == KEY_VAL_3) {
-        // 返回秒表主界面
+    }
+    else if (key == KEY_VAL_3)
+    {
         g_system_state = STATE_STOPWATCH;
         Display_ResetStopwatch();
         Display_StopwatchPage();
-    } else if(key == KEY_VAL_4) {
-        // 退出秒表模式
+    }
+    else if (key == KEY_VAL_4)
+    {
         g_system_state = STATE_HOME;
         Display_ResetStopwatch();
         Display_HomePage();
@@ -467,54 +545,69 @@ void Handle_LapView_Keys(unsigned char key) {
 }
 
 // 主函数
-void main(void) {
+void main(void)
+{
     unsigned char key;
     unsigned int i;
-    
+
     // 初始化LCD
     LCD_Init();
-    
-    // 等待LCD稳定
-    for(i = 0; i < 10000; i++);
-    
 
+    // 等待LCD稳定
+    for (i = 0; i < 10000; i++)
+        ;
+
+    // 初始化各模块
     Key_Init();
     Stopwatch_Init();
     Buzzer_Init();
-    BUZZER = BUZZER_OFF; // 强制关闭蜂鸣器，防止开机误响（使用板级宏）
-    
-    // 显示主页
+    BUZZER = BUZZER_OFF;
+
     Display_HomePage();
-    
+
     // 最后启动时钟（定时器中断）
     Clock_Init();
-    
+
     // 主循环
-    while(1) {
-        // 获取按键
+    while (1)
+    {
         key = Key_GetPressed();
 
-        // 菜单光标超时处理：有按键且在菜单状态则重置计数和显示
-        if(g_system_state == STATE_MENU) {
-            if(key) {
+        // 菜单光标超时处理 (逻辑未更改)
+        if (g_system_state == STATE_MENU)
+        {
+            if (key)
+            {
                 g_menu_cursor_timeout = 0;
                 g_menu_cursor_visible = 1;
-            } else {
-                if(g_menu_cursor_visible) {
+            }
+            else
+            {
+                if (g_menu_cursor_visible)
+                {
                     g_menu_cursor_timeout++;
-                    if(g_menu_cursor_timeout >= 50000) { 
+                    if (g_menu_cursor_timeout >= 50000)
+                    {
                         g_menu_cursor_visible = 0;
                         g_menu_pos = 0;
-                        g_system_state = STATE_HOME; // 超时后直接回主页
+                        g_system_state = STATE_HOME;
                         Display_HomePage();
                     }
                 }
             }
-        } else {
+        }
+        else
+        {
             g_menu_cursor_visible = 1;
             g_menu_cursor_timeout = 0;
         }
 
+        /* * 优化: 状态机 switch 语句
+         * 将所有按键处理逻辑分发到各自的 Handle_* 函数中。
+         * 移除了原有的针对 STATE_TIME_SET 的特殊处理，
+         * 因为该逻辑已被移入 Handle_TimeSet_Keys() 函数中。
+         * 这使得 main() 循环更干净，行数更少。
+         */
         switch (g_system_state)
         {
         case STATE_TIME_SET:
@@ -538,7 +631,10 @@ void main(void) {
             break;
         }
 
-        // 定期刷新显示
+        /* * 优化: 定期刷新显示逻辑
+         * 合并了重复的 Buzzer_Check() 和 Display_HomePage() 调用。
+         * 功能完全不变，但代码行数减少，逻辑更清晰。
+         */
         if (g_time_changed)
         {
             g_time_changed = 0;

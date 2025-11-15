@@ -73,9 +73,6 @@ void LCD_WriteData(unsigned char dat, unsigned char side) {
     LCD_Deselect();
 }
 
-/* 已移除：LCD_ReadData (读数据) 实现
-   该函数在驱动外部未被调用，且内部唯一调用来自注释掉的 LCD_DrawPoint，
-   因此移除此实现以节省代码空间。 */
 
 // LCD初始化
 void LCD_Init(void) {
@@ -147,40 +144,3 @@ void LCD_DrawByte(unsigned char page, unsigned char col, unsigned char dat) {
         LCD_WriteData(dat, 1);
     }
 }
-
-/* 已移除：LCD_Test 测试函数（填充屏幕），该函数在主程序中仅以注释形式存在。
-   如需测试，请临时恢复该函数或在调试时直接使用 LCD_DrawByte 循环。 */
-
-/*
-// 画点(x: 0-127, y: 0-63) - 未使用，已注释以节省内存
-void LCD_DrawPoint(unsigned char x, unsigned char y, unsigned char color) {
-    unsigned char page, bit_pos, dat;
-    unsigned char side;
-    
-    page = y / 8;
-    bit_pos = y % 8;
-    
-    if(x < 64) {
-        side = 0;
-    } else {
-        side = 1;
-        x -= 64;
-    }
-    
-    LCD_WriteCmd(LCD_CMD_SET_X | page, side);
-    LCD_WriteCmd(LCD_CMD_SET_Y | x, side);
-    
-    // 读-改-写
-    LCD_ReadData(side);  // 空读
-    dat = LCD_ReadData(side);
-    
-    if(color) {
-        dat |= (1 << bit_pos);
-    } else {
-        dat &= ~(1 << bit_pos);
-    }
-    
-    LCD_WriteCmd(LCD_CMD_SET_Y | x, side);
-    LCD_WriteData(dat, side);
-}
-*/
