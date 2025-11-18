@@ -28,24 +28,6 @@ static void Buzzer_Start(unsigned char durationTicks)
     BUZZ_REMAINING_SET(durationTicks); // 锁定时长，后续只递减，不看当前时间
 }
 
-// 定义短响与长响的时长（以 10ms 为单位）
-#define BUZZ_SHORT_TICKS 10  // 100 ms
-#define BUZZ_LONG_TICKS 50   // 500 ms
-
-// 声明 Buzzer_Pulse 的原型，防止在 ANSI C (Keil C51) 中出现 "requires ANSI-style prototype" 错误
-static void Buzzer_Pulse(unsigned char ticks);
-
-// 为头文件中声明的 API 提供实现
-void Buzzer_Short(void)
-{
-    Buzzer_Pulse(BUZZ_SHORT_TICKS);
-}
-
-void Buzzer_Long(void)
-{
-    Buzzer_Pulse(BUZZ_LONG_TICKS);
-}
-
 // 初始化
 void Buzzer_Init(void)
 {
@@ -156,14 +138,14 @@ void Buzzer_Check(void)
     // 59分的 55~59 秒短响（每秒一次）
     if (g_datetime.minute == 59 && now_sec >= 55 && now_sec <= 59)
     {
-        Buzzer_Pulse(BUZZ_SHORT_TICKS);
+        Buzzer_Pulse(8);
         return;
     }
 
     // 整点：第 0 秒长响（仅一次）
     if (g_datetime.minute == 0 && now_sec == 0)
     {
-        Buzzer_Pulse(BUZZ_LONG_TICKS);
+        Buzzer_Pulse(50);
         return;
     }
 }

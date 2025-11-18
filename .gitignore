@@ -19,3 +19,4 @@ tools/
 Objects/*
 !Objects/Clock.hex
 Project Backups/
+main.lst

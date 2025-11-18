@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 1   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE DISPLAY
@@ -62,7 +62,7 @@ line level    source
   52          static unsigned char idata g_prev_stop_decisecond = 0xFF;
   53          static unsigned char idata g_prev_lap_index[3] = {0xFF, 0xFF, 0xFF};
   54          static unsigned char idata g_prev_lap_hour[3];
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 2   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 2   
 
   55          static unsigned char idata g_prev_lap_minute[3];
   56          static unsigned char idata g_prev_lap_second[3];
@@ -126,7 +126,7 @@ line level    source
  114   2              {
  115   3                  data_byte |= 0x80;
  116   3              }
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 3   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 3   
 
  117   2              LCD_DrawByte(page + 1, col + i, data_byte);
  118   2          }
@@ -190,7 +190,7 @@ line level    source
  176          {
  177   1          g_prev_lap_index[i] = 0xFF;
  178   1          g_prev_lap_hour[i] = 0xFF;
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 4   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 4   
 
  179   1          g_prev_lap_minute[i] = 0xFF;
  180   1          g_prev_lap_second[i] = 0xFF;
@@ -254,7 +254,7 @@ line level    source
  238   1          // 状态计算
  239   1          editing_date = (g_system_state == STATE_DATE_SET);
  240   1          editing_time = (g_system_state == STATE_TIME_SET);
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 5   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 5   
 
  241   1          menu_active = (g_system_state == STATE_MENU);
  242   1      
@@ -318,9 +318,9 @@ line level    source
  298   1          // 绘制英文星期缩写 (例如: 2025-11-14    Fri)
  299   1          {
  300   2              unsigned char dow = GetDayOfWeek(year_display, month_display, day_display);
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 6   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 6   
 
- 301   2              unsigned char wk_col = 100; /* 安全位置，避免与时间区域重叠 */
+ 301   2              unsigned char wk_col = 104; /* 安全位置，避免与时间区域重叠 */
  302   2              /* 直接逐列绘制三个字符，避免通过通用接口出现混乱 */
  303   2              unsigned char ch_idx, i, idx_ext;
  304   2              for (ch_idx = 0; ch_idx < 3; ch_idx++) {
@@ -346,7 +346,7 @@ line level    source
  324   1          page = 3;
  325   1          {
  326   2              total_width = 14 + (8 - 1) * 14;
- 327   2              col = (128 - total_width) / 2;
+ 327   2              col = (132 - total_width) / 2;
  328   2          }
  329   1          Display_Char_16x16_Custom(page, col, (hour_display / 10) + '0', highlight_hour_tens);
  330   1          col += 14;
@@ -382,7 +382,7 @@ line level    source
  360   2              g_prev_menu_pos = g_menu_pos; /* 记录绘制的位置 */
  361   2          }
  362   1      }
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 7   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 7   
 
  363          
  364          void Display_ResetStopwatch(void)
@@ -446,7 +446,7 @@ line level    source
  422   2              {
  423   3                  lap_index = g_lap_count - 1 - i;
  424   3                  lap_no = lap_index + 1;
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 8   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 8   
 
  425   3      
  426   3                  /* 复用: NeedLapUpdate 辅助函数 */
@@ -510,7 +510,7 @@ line level    source
  484   3              }
  485   2          }
  486   1      }
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 9   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 22:25:18 PAGE 9   
 
 
 

@@ -298,7 +298,7 @@ void Display_HomePage(void)
     // 绘制英文星期缩写 (例如: 2025-11-14    Fri)
     {
         unsigned char dow = GetDayOfWeek(year_display, month_display, day_display);
-        unsigned char wk_col = 100; /* 安全位置，避免与时间区域重叠 */
+        unsigned char wk_col = 104; /* 安全位置，避免与时间区域重叠 */
         /* 直接逐列绘制三个字符，避免通过通用接口出现混乱 */
         unsigned char ch_idx, i, idx_ext;
         for (ch_idx = 0; ch_idx < 3; ch_idx++) {
@@ -324,7 +324,7 @@ void Display_HomePage(void)
     page = 3;
     {
         total_width = 14 + (8 - 1) * 14;
-        col = (128 - total_width) / 2;
+        col = (132 - total_width) / 2;
     }
     Display_Char_16x16_Custom(page, col, (hour_display / 10) + '0', highlight_hour_tens);
     col += 14;
