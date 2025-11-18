@@ -1,6 +1,6 @@
 #include "clock.h"
 // 全局时间变量 - 使用idata(内部RAM间接寻址)
-DateTime idata g_datetime = {2025, 11, 14, 17, 42, 0, 0};
+DateTime idata g_datetime = {2025, 11, 14, 17, 59, 0, 0};
 bit g_time_changed = 0;
 
 // 定时器0初始化 (10ms定时)

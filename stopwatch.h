@@ -8,8 +8,8 @@
 #define SW_RUNNING  1
 #define SW_PAUSED   2
 
-// 最大计次数 - 减少到5条以节省RAM
-#define MAX_LAP_COUNT  5
+// 最大计次数 - 减少到8条以节省RAM
+#define MAX_LAP_COUNT  8
 
 // 秒表结构 - 优化内存使用
 typedef struct {
