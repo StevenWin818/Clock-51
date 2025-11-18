@@ -1,6 +1,6 @@
 #include "clock.h"
 // 全局时间变量 - 使用idata(内部RAM间接寻址)
-DateTime idata g_datetime = {2025, 11, 14, 17, 59, 0, 0};
+DateTime idata g_datetime = {2025, 11, 18, 23, 59, 50, 0};
 bit g_time_changed = 0;
 
 // 定时器0初始化 (10ms定时)
@@ -86,4 +86,13 @@ void DateTime_SetTime(unsigned char hour, unsigned char minute, unsigned char se
     g_datetime.minute = minute;
     g_datetime.second = second;
     g_datetime.tick_count = 0;
+}
+
+// 星期计算：使用 Sakamoto 算法，返回 0=Sunday .. 6=Saturday
+unsigned char GetDayOfWeek(unsigned int year, unsigned char month, unsigned char day) {
+    unsigned int y = year;
+    unsigned char m = month;
+    static const unsigned char t[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+    if (m < 3) y -= 1;
+    return (unsigned char)((y + y/4 - y/100 + y/400 + t[m-1] + day) % 7);
 }

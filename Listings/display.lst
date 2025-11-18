@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 1   
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE DISPLAY
@@ -37,451 +37,489 @@ line level    source
   27              HANZI_BIAO = 1
   28          };
   29          
-  30          #define DISPLAY_SCREEN_NONE 0xFF
-  31          #define DISPLAY_SCREEN_HOME 0
-  32          #define DISPLAY_SCREEN_STOPWATCH 2
-  33          #define DISPLAY_SCREEN_LAP 2
-  34          
-  35          /* 静态全局变量 */
-  36          static unsigned char idata g_last_screen = DISPLAY_SCREEN_NONE;
-  37          static bit g_stopwatch_initialized = 0;
-  38          static unsigned char idata g_prev_stop_hour = 0xFF;
-  39          static unsigned char idata g_prev_stop_minute = 0xFF;
-  40          static unsigned char idata g_prev_stop_second = 0xFF;
-  41          static unsigned char idata g_prev_stop_decisecond = 0xFF;
-  42          static unsigned char idata g_prev_lap_index[3] = {0xFF, 0xFF, 0xFF};
-  43          static unsigned char idata g_prev_lap_hour[3];
-  44          static unsigned char idata g_prev_lap_minute[3];
-  45          static unsigned char idata g_prev_lap_second[3];
-  46          static unsigned char idata g_prev_lap_decisecond[3];
-  47          static unsigned char idata g_prev_menu_pos = 0xFF;
-  48          
-  49          //基础绘制函数
-  50          static void Display_Hanzi16(unsigned char page, unsigned char col, unsigned char index)
-  51          {
-  52   1          unsigned char i;
-  53   1          for (i = 0; i < 16; i++)
-  54   1          {
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 2   
+  30          // 英文星期缩写表 (0=Sun .. 6=Sat)
+  31          static const unsigned char code g_week_abbrev[7][4] = {
+  32              "SUN",
+  33              "MON",
+  34              "TUE",
+  35              "WED",
+  36              "THU",
+  37              "FRI",
+  38              "SAT",
+  39          };
+  40          
+  41          #define DISPLAY_SCREEN_NONE 0xFF
+  42          #define DISPLAY_SCREEN_HOME 0
+  43          #define DISPLAY_SCREEN_STOPWATCH 2
+  44          #define DISPLAY_SCREEN_LAP 2
+  45          
+  46          /* 静态全局变量 */
+  47          static unsigned char idata g_last_screen = DISPLAY_SCREEN_NONE;
+  48          static bit g_stopwatch_initialized = 0;
+  49          static unsigned char idata g_prev_stop_hour = 0xFF;
+  50          static unsigned char idata g_prev_stop_minute = 0xFF;
+  51          static unsigned char idata g_prev_stop_second = 0xFF;
+  52          static unsigned char idata g_prev_stop_decisecond = 0xFF;
+  53          static unsigned char idata g_prev_lap_index[3] = {0xFF, 0xFF, 0xFF};
+  54          static unsigned char idata g_prev_lap_hour[3];
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 2   
 
-  55   2              LCD_DrawByte(page, col + i, g_hanzi_table[index].top[i]);
-  56   2              LCD_DrawByte(page + 1, col + i, g_hanzi_table[index].bottom[i]);
-  57   2          }
-  58   1      }
+  55          static unsigned char idata g_prev_lap_minute[3];
+  56          static unsigned char idata g_prev_lap_second[3];
+  57          static unsigned char idata g_prev_lap_decisecond[3];
+  58          static unsigned char idata g_prev_menu_pos = 0xFF;
   59          
-  60          static void Display_DrawMenuCursor(unsigned char line, bit visible)
-  61          {
-  62   1          // 优化: 合并变量声明，减少行数
-  63   1          unsigned char base_page, total_width, time_col, i, col;
-  64   1      
-  65   1          base_page = (line == 0) ? 0 : ((line == 1) ? 3 : 6);
-  66   1      
-  67   1          /* 计算光标位置 */
-  68   1          {
-  69   2              total_width = 16 + (8 - 1) * 12; // 100
-  70   2              time_col = (128 - total_width) / 2;
-  71   2              col = (time_col > 10) ? (time_col - 10) : 0;
-  72   2          }
-  73   1      
-  74   1          if (visible)
-  75   1          {
-  76   2              /* 绘制箭头 */
-  77   2              static const unsigned char code arrow_bottom[8] = {
-  78   2                  0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
-  79   2              static const unsigned char code arrow_top[8] = {
-  80   2                  0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80};
-  81   2              for (i = 0; i < 8; i++)
-  82   2              {
-  83   3                  LCD_DrawByte(base_page, col + i, arrow_top[i]);
-  84   3                  LCD_DrawByte(base_page + 1, col + i, arrow_bottom[i]);
-  85   3              }
-  86   2          }
-  87   1          else
-  88   1          {
-  89   2              // 清除箭头
-  90   2              LCD_ClearArea(base_page, base_page + 1, col, col + 7);
-  91   2          }
-  92   1      }
-  93          
-  94          static void Display_Char_8x16_Custom(unsigned char page, unsigned char col, char c, bit underline)
-  95          {
-  96   1          unsigned char i, index = GetCharIndex(c), data_byte;
-  97   1          for (i = 0; i < 8; i++)
-  98   1          {
-  99   2              data_byte = Font_8x16[index][i];
- 100   2              LCD_DrawByte(page, col + i, data_byte);
- 101   2              data_byte = Font_8x16[index][i + 8];
- 102   2              if (underline)
- 103   2              {
- 104   3                  data_byte |= 0x80;
- 105   3              }
- 106   2              LCD_DrawByte(page + 1, col + i, data_byte);
- 107   2          }
- 108   1      }
- 109          
- 110          static void Display_Char_16x16_Custom(unsigned char page, unsigned char col, char c, bit underline)
- 111          {
- 112   1          unsigned char i, index = GetCharIndex(c), data_byte;
- 113   1          for (i = 0; i < 16; i++)
- 114   1          {
- 115   2              data_byte = Font_16x16[index][i];
- 116   2              LCD_DrawByte(page, col + i, data_byte);
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 3   
+  60          //基础绘制函数
+  61          static void Display_Hanzi16(unsigned char page, unsigned char col, unsigned char index)
+  62          {
+  63   1          unsigned char i;
+  64   1          for (i = 0; i < 16; i++)
+  65   1          {
+  66   2              LCD_DrawByte(page, col + i, g_hanzi_table[index].top[i]);
+  67   2              LCD_DrawByte(page + 1, col + i, g_hanzi_table[index].bottom[i]);
+  68   2          }
+  69   1      }
+  70          
+  71          static void Display_DrawMenuCursor(unsigned char line, bit visible)
+  72          {
+  73   1          // 优化: 合并变量声明，减少行数
+  74   1          unsigned char base_page, total_width, time_col, i, col;
+  75   1      
+  76   1          base_page = (line == 0) ? 0 : ((line == 1) ? 3 : 6);
+  77   1      
+  78   1          /* 计算光标位置 */
+  79   1          {
+  80   2              total_width = 16 + (8 - 1) * 12; // 100
+  81   2              time_col = (128 - total_width) / 2;
+  82   2              col = (time_col > 10) ? (time_col - 10) : 0;
+  83   2          }
+  84   1      
+  85   1          if (visible)
+  86   1          {
+  87   2              /* 绘制箭头：已替换为自定义图形（前8字节为 top，后8字节为 bottom） */
+  88   2              static const unsigned char code arrow_top[8] = {
+  89   2                  0xE0, 0xC0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00};
+  90   2              static const unsigned char code arrow_bottom[8] = {
+  91   2                  0x0F, 0x07, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00};
+  92   2              for (i = 0; i < 8; i++)
+  93   2              {
+  94   3                  LCD_DrawByte(base_page, col + i, arrow_top[i]);
+  95   3                  LCD_DrawByte(base_page + 1, col + i, arrow_bottom[i]);
+  96   3              }
+  97   2          }
+  98   1          else
+  99   1          {
+ 100   2              // 清除箭头
+ 101   2              LCD_ClearArea(base_page, base_page + 1, col, col + 7);
+ 102   2          }
+ 103   1      }
+ 104          
+ 105          static void Display_Char_8x16_Custom(unsigned char page, unsigned char col, char c, bit underline)
+ 106          {
+ 107   1          unsigned char i, index = GetCharIndex(c), data_byte;
+ 108   1          for (i = 0; i < 8; i++)
+ 109   1          {
+ 110   2              data_byte = Font_8x16[index][i];
+ 111   2              LCD_DrawByte(page, col + i, data_byte);
+ 112   2              data_byte = Font_8x16[index][i + 8];
+ 113   2              if (underline)
+ 114   2              {
+ 115   3                  data_byte |= 0x80;
+ 116   3              }
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 3   
 
- 117   2              data_byte = Font_16x16[index][i + 16];
- 118   2              if (underline)
- 119   2              {
- 120   3                  data_byte |= 0x80;
- 121   3              }
- 122   2              LCD_DrawByte(page + 1, col + i, data_byte);
- 123   2          }
- 124   1      }
- 125          
- 126          /* 公共接口 */
- 127          void Display_Char_8x16(unsigned char page, unsigned char col, char c)
- 128          {
- 129   1          Display_Char_8x16_Custom(page, col, c, 0);
- 130   1      }
- 131          
- 132          void Display_Char_16x16(unsigned char page, unsigned char col, char c)
- 133          {
- 134   1          Display_Char_16x16_Custom(page, col, c, 0);
+ 117   2              LCD_DrawByte(page + 1, col + i, data_byte);
+ 118   2          }
+ 119   1      }
+ 120          
+ 121          static void Display_Char_16x16_Custom(unsigned char page, unsigned char col, char c, bit underline)
+ 122          {
+ 123   1          unsigned char i, index = GetCharIndex(c), data_byte;
+ 124   1          for (i = 0; i < 16; i++)
+ 125   1          {
+ 126   2              data_byte = Font_16x16[index][i];
+ 127   2              LCD_DrawByte(page, col + i, data_byte);
+ 128   2              data_byte = Font_16x16[index][i + 16];
+ 129   2              if (underline)
+ 130   2              {
+ 131   3                  data_byte |= 0x80;
+ 132   3              }
+ 133   2              LCD_DrawByte(page + 1, col + i, data_byte);
+ 134   2          }
  135   1      }
  136          
- 137          /* 绘制秒表的小数点 */
- 138          static void Display_DrawDecimalPoint(unsigned char page, unsigned char col)
+ 137          /* 公共接口 */
+ 138          void Display_Char_8x16(unsigned char page, unsigned char col, char c)
  139          {
- 140   1          unsigned char idata i;
- 141   1          for (i = 0; i < 8; i++)
- 142   1          {
- 143   2              LCD_DrawByte(page, col + i, 0x00);
- 144   2              LCD_DrawByte(page + 1, col + i, (i == 3 || i == 4) ? 0x18 : 0x00);
- 145   2          }
+ 140   1          Display_Char_8x16_Custom(page, col, c, 0);
+ 141   1      }
+ 142          
+ 143          void Display_Char_16x16(unsigned char page, unsigned char col, char c)
+ 144          {
+ 145   1          Display_Char_16x16_Custom(page, col, c, 0);
  146   1      }
  147          
- 148          /* 绘制一行计次时间 (HH:MM:SS.D) (复用于 StopwatchPage 和 LapViewPage) */
- 149          static void Display_DrawLapTime(unsigned char page, unsigned char base_col, unsigned char lap_index)
+ 148          /* 绘制秒表的小数点 */
+ 149          static void Display_DrawDecimalPoint(unsigned char page, unsigned char col)
  150          {
- 151   1          Display_Char_8x16(page, base_col + 0, g_laps[lap_index].hour / 10 + '0');
- 152   1          Display_Char_8x16(page, base_col + 8, g_laps[lap_index].hour % 10 + '0');
- 153   1          Display_Char_8x16(page, base_col + 16, ':');
- 154   1          Display_Char_8x16(page, base_col + 24, g_laps[lap_index].minute / 10 + '0');
- 155   1          Display_Char_8x16(page, base_col + 32, g_laps[lap_index].minute % 10 + '0');
- 156   1          Display_Char_8x16(page, base_col + 40, ':');
- 157   1          Display_Char_8x16(page, base_col + 48, g_laps[lap_index].second / 10 + '0');
- 158   1          Display_Char_8x16(page, base_col + 56, g_laps[lap_index].second % 10 + '0');
- 159   1          Display_DrawDecimalPoint(page, base_col + 64); /* 复用 */
- 160   1          Display_Char_8x16(page, base_col + 72, g_laps[lap_index].decisecond + '0');
- 161   1      }
- 162          
- 163          /* 重置指定索引的 "上一次" 计次缓存 */
- 164          static void Display_ResetPrevLap(unsigned char i)
- 165          {
- 166   1          g_prev_lap_index[i] = 0xFF;
- 167   1          g_prev_lap_hour[i] = 0xFF;
- 168   1          g_prev_lap_minute[i] = 0xFF;
- 169   1          g_prev_lap_second[i] = 0xFF;
- 170   1          g_prev_lap_decisecond[i] = 0xFF;
- 171   1      }
- 172          
- 173          /* 重置所有 "上一次" 的秒表和计次缓存变量 (复用于 ResetStopwatch 和 StopwatchPage) */
- 174          static void Display_Internal_ResetStopwatchVars(void)
- 175          {
- 176   1          unsigned char idata i;
- 177   1          g_prev_stop_hour = 0xFF;
- 178   1          g_prev_stop_minute = 0xFF;
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 4   
+ 151   1          unsigned char idata i;
+ 152   1          for (i = 0; i < 8; i++)
+ 153   1          {
+ 154   2              LCD_DrawByte(page, col + i, 0x00);
+ 155   2              LCD_DrawByte(page + 1, col + i, (i == 3 || i == 4) ? 0x18 : 0x00);
+ 156   2          }
+ 157   1      }
+ 158          
+ 159          /* 绘制一行计次时间 (HH:MM:SS.D) (复用于 StopwatchPage 和 LapViewPage) */
+ 160          static void Display_DrawLapTime(unsigned char page, unsigned char base_col, unsigned char lap_index)
+ 161          {
+ 162   1          Display_Char_8x16(page, base_col + 0, g_laps[lap_index].hour / 10 + '0');
+ 163   1          Display_Char_8x16(page, base_col + 8, g_laps[lap_index].hour % 10 + '0');
+ 164   1          Display_Char_8x16(page, base_col + 16, ':');
+ 165   1          Display_Char_8x16(page, base_col + 24, g_laps[lap_index].minute / 10 + '0');
+ 166   1          Display_Char_8x16(page, base_col + 32, g_laps[lap_index].minute % 10 + '0');
+ 167   1          Display_Char_8x16(page, base_col + 40, ':');
+ 168   1          Display_Char_8x16(page, base_col + 48, g_laps[lap_index].second / 10 + '0');
+ 169   1          Display_Char_8x16(page, base_col + 56, g_laps[lap_index].second % 10 + '0');
+ 170   1          Display_DrawDecimalPoint(page, base_col + 64); /* 复用 */
+ 171   1          Display_Char_8x16(page, base_col + 72, g_laps[lap_index].decisecond + '0');
+ 172   1      }
+ 173          
+ 174          /* 重置指定索引的 "上一次" 计次缓存 */
+ 175          static void Display_ResetPrevLap(unsigned char i)
+ 176          {
+ 177   1          g_prev_lap_index[i] = 0xFF;
+ 178   1          g_prev_lap_hour[i] = 0xFF;
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 4   
 
- 179   1          g_prev_stop_second = 0xFF;
- 180   1          g_prev_stop_decisecond = 0xFF;
- 181   1          for (i = 0; i < 3; i++)
- 182   1          {
- 183   2              Display_ResetPrevLap(i); /* 复用 */
- 184   2          }
- 185   1      }
- 186          
- 187          /* 检查指定的计次是否需要更新 */
- 188          static bit NeedLapUpdate(unsigned char i, unsigned char lap_index)
- 189          {
- 190   1          return (g_prev_lap_index[i] != lap_index) ||
- 191   1                 (g_prev_lap_hour[i] != g_laps[lap_index].hour) ||
- 192   1                 (g_prev_lap_minute[i] != g_laps[lap_index].minute) ||
- 193   1                 (g_prev_lap_second[i] != g_laps[lap_index].second) ||
- 194   1                 (g_prev_lap_decisecond[i] != g_laps[lap_index].decisecond);
- 195   1      }
- 196          
- 197          /* 更新 "上一次" 计次缓存为当前值 */
- 198          static void Display_SetPrevLap(unsigned char i, unsigned char lap_index)
- 199          {
- 200   1          g_prev_lap_index[i] = lap_index;
- 201   1          g_prev_lap_hour[i] = g_laps[lap_index].hour;
- 202   1          g_prev_lap_minute[i] = g_laps[lap_index].minute;
- 203   1          g_prev_lap_second[i] = g_laps[lap_index].second;
- 204   1          g_prev_lap_decisecond[i] = g_laps[lap_index].decisecond;
- 205   1      }
- 206          
- 207          // 主显示函数
- 208          void Display_HomePage(void)
- 209          {
- 210   1          // 优化: 合并变量声明，减少行数
- 211   1          unsigned int year_display;
- 212   1          unsigned char month_display, day_display, total_width, date_highlight;
- 213   1          unsigned char hour_display, minute_display, second_display;
- 214   1          bit editing_date, editing_time, menu_active, first_draw;
- 215   1          bit highlight_hour_tens, highlight_hour_units, highlight_minute_tens;
- 216   1          bit highlight_minute_units, highlight_second_pair;
- 217   1          unsigned char page, col;
- 218   1      
- 219   1          first_draw = (g_last_screen != DISPLAY_SCREEN_HOME);
- 220   1          g_last_screen = DISPLAY_SCREEN_HOME;
- 221   1      
- 222   1          if (first_draw)
- 223   1          {
- 224   2              LCD_ClearArea(0, 7, 0, 127);
- 225   2          }
- 226   1      
- 227   1          // 状态计算
- 228   1          editing_date = (g_system_state == STATE_DATE_SET);
- 229   1          editing_time = (g_system_state == STATE_TIME_SET);
- 230   1          menu_active = (g_system_state == STATE_MENU);
- 231   1      
- 232   1          if (editing_date)
- 233   1          {
- 234   2              year_display = g_temp_year;
- 235   2              month_display = g_temp_month;
- 236   2              day_display = g_temp_day;
- 237   2              date_highlight = 7 - g_edit_pos;
- 238   2          }
- 239   1          else
- 240   1          {
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 5   
+ 179   1          g_prev_lap_minute[i] = 0xFF;
+ 180   1          g_prev_lap_second[i] = 0xFF;
+ 181   1          g_prev_lap_decisecond[i] = 0xFF;
+ 182   1      }
+ 183          
+ 184          /* 重置所有 "上一次" 的秒表和计次缓存变量 (复用于 ResetStopwatch 和 StopwatchPage) */
+ 185          static void Display_Internal_ResetStopwatchVars(void)
+ 186          {
+ 187   1          unsigned char idata i;
+ 188   1          g_prev_stop_hour = 0xFF;
+ 189   1          g_prev_stop_minute = 0xFF;
+ 190   1          g_prev_stop_second = 0xFF;
+ 191   1          g_prev_stop_decisecond = 0xFF;
+ 192   1          for (i = 0; i < 3; i++)
+ 193   1          {
+ 194   2              Display_ResetPrevLap(i); /* 复用 */
+ 195   2          }
+ 196   1      }
+ 197          
+ 198          /* 检查指定的计次是否需要更新 */
+ 199          static bit NeedLapUpdate(unsigned char i, unsigned char lap_index)
+ 200          {
+ 201   1          return (g_prev_lap_index[i] != lap_index) ||
+ 202   1                 (g_prev_lap_hour[i] != g_laps[lap_index].hour) ||
+ 203   1                 (g_prev_lap_minute[i] != g_laps[lap_index].minute) ||
+ 204   1                 (g_prev_lap_second[i] != g_laps[lap_index].second) ||
+ 205   1                 (g_prev_lap_decisecond[i] != g_laps[lap_index].decisecond);
+ 206   1      }
+ 207          
+ 208          /* 更新 "上一次" 计次缓存为当前值 */
+ 209          static void Display_SetPrevLap(unsigned char i, unsigned char lap_index)
+ 210          {
+ 211   1          g_prev_lap_index[i] = lap_index;
+ 212   1          g_prev_lap_hour[i] = g_laps[lap_index].hour;
+ 213   1          g_prev_lap_minute[i] = g_laps[lap_index].minute;
+ 214   1          g_prev_lap_second[i] = g_laps[lap_index].second;
+ 215   1          g_prev_lap_decisecond[i] = g_laps[lap_index].decisecond;
+ 216   1      }
+ 217          
+ 218          // 主显示函数
+ 219          void Display_HomePage(void)
+ 220          {
+ 221   1          // 优化: 合并变量声明，减少行数
+ 222   1          unsigned int year_display;
+ 223   1          unsigned char month_display, day_display, total_width, date_highlight;
+ 224   1          unsigned char hour_display, minute_display, second_display;
+ 225   1          bit editing_date, editing_time, menu_active, first_draw;
+ 226   1          bit highlight_hour_tens, highlight_hour_units, highlight_minute_tens;
+ 227   1          bit highlight_minute_units, highlight_second_pair;
+ 228   1          unsigned char page, col;
+ 229   1      
+ 230   1          first_draw = (g_last_screen != DISPLAY_SCREEN_HOME);
+ 231   1          g_last_screen = DISPLAY_SCREEN_HOME;
+ 232   1      
+ 233   1          if (first_draw)
+ 234   1          {
+ 235   2              LCD_ClearArea(0, 7, 0, 127);
+ 236   2          }
+ 237   1      
+ 238   1          // 状态计算
+ 239   1          editing_date = (g_system_state == STATE_DATE_SET);
+ 240   1          editing_time = (g_system_state == STATE_TIME_SET);
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 5   
 
- 241   2              year_display = g_datetime.year;
- 242   2              month_display = g_datetime.month;
- 243   2              day_display = g_datetime.day;
- 244   2          }
- 245   1      
- 246   1          if (editing_time)
- 247   1          {
- 248   2              hour_display = g_temp_hour;
- 249   2              minute_display = g_temp_minute;
- 250   2              second_display = g_temp_second;
- 251   2          }
- 252   1          else
- 253   1          {
- 254   2              hour_display = g_datetime.hour;
- 255   2              minute_display = g_datetime.minute;
- 256   2              second_display = g_datetime.second;
- 257   2          }
- 258   1      
- 259   1          highlight_hour_tens = editing_time && (g_edit_pos == 5);
- 260   1          highlight_hour_units = editing_time && (g_edit_pos == 4);
- 261   1          highlight_minute_tens = editing_time && (g_edit_pos == 3);
- 262   1          highlight_minute_units = editing_time && (g_edit_pos == 2);
- 263   1          highlight_second_pair = editing_time && (g_edit_pos == 0 || g_edit_pos == 1);
- 264   1      
- 265   1          // 日期绘制
- 266   1          col = 24;
- 267   1          Display_Char_8x16_Custom(0, col, (year_display / 1000) + '0', editing_date && date_highlight == 0);
- 268   1          col += 8;
- 269   1          Display_Char_8x16_Custom(0, col, ((year_display / 100) % 10) + '0', editing_date && date_highlight == 
+ 241   1          menu_active = (g_system_state == STATE_MENU);
+ 242   1      
+ 243   1          if (editing_date)
+ 244   1          {
+ 245   2              year_display = g_temp_year;
+ 246   2              month_display = g_temp_month;
+ 247   2              day_display = g_temp_day;
+ 248   2              date_highlight = 7 - g_edit_pos;
+ 249   2          }
+ 250   1          else
+ 251   1          {
+ 252   2              year_display = g_datetime.year;
+ 253   2              month_display = g_datetime.month;
+ 254   2              day_display = g_datetime.day;
+ 255   2          }
+ 256   1      
+ 257   1          if (editing_time)
+ 258   1          {
+ 259   2              hour_display = g_temp_hour;
+ 260   2              minute_display = g_temp_minute;
+ 261   2              second_display = g_temp_second;
+ 262   2          }
+ 263   1          else
+ 264   1          {
+ 265   2              hour_display = g_datetime.hour;
+ 266   2              minute_display = g_datetime.minute;
+ 267   2              second_display = g_datetime.second;
+ 268   2          }
+ 269   1      
+ 270   1          highlight_hour_tens = editing_time && (g_edit_pos == 5);
+ 271   1          highlight_hour_units = editing_time && (g_edit_pos == 4);
+ 272   1          highlight_minute_tens = editing_time && (g_edit_pos == 3);
+ 273   1          highlight_minute_units = editing_time && (g_edit_pos == 2);
+ 274   1          highlight_second_pair = editing_time && (g_edit_pos == 0 || g_edit_pos == 1);
+ 275   1      
+ 276   1          // 日期绘制
+ 277   1          col = 12;
+ 278   1          Display_Char_8x16_Custom(0, col, (year_display / 1000) + '0', editing_date && date_highlight == 0);
+ 279   1          col += 8;
+ 280   1          Display_Char_8x16_Custom(0, col, ((year_display / 100) % 10) + '0', editing_date && date_highlight == 
              -1);
- 270   1          col += 8;
- 271   1          Display_Char_8x16_Custom(0, col, ((year_display / 10) % 10) + '0', editing_date && date_highlight == 2
+ 281   1          col += 8;
+ 282   1          Display_Char_8x16_Custom(0, col, ((year_display / 10) % 10) + '0', editing_date && date_highlight == 2
              -);
- 272   1          col += 8;
- 273   1          Display_Char_8x16_Custom(0, col, (year_display % 10) + '0', editing_date && date_highlight == 3);
- 274   1          col += 8;
- 275   1          Display_Char_8x16(0, col, '-');
- 276   1          col += 8;
- 277   1          Display_Char_8x16_Custom(0, col, (month_display / 10) + '0', editing_date && date_highlight == 4);
- 278   1          col += 8;
- 279   1          Display_Char_8x16_Custom(0, col, (month_display % 10) + '0', editing_date && date_highlight == 5);
- 280   1          col += 8;
- 281   1          Display_Char_8x16(0, col, '-');
- 282   1          col += 8;
- 283   1          Display_Char_8x16_Custom(0, col, (day_display / 10) + '0', editing_date && date_highlight == 6);
- 284   1          col += 8;
- 285   1          Display_Char_8x16_Custom(0, col, (day_display % 10) + '0', editing_date && date_highlight == 7);
- 286   1      
- 287   1          // 时间绘制
- 288   1          page = 3;
- 289   1          {
- 290   2              total_width = 16 + (8 - 1) * 12;
- 291   2              col = (128 - total_width) / 2;
- 292   2          }
- 293   1          Display_Char_16x16_Custom(page, col, (hour_display / 10) + '0', highlight_hour_tens);
- 294   1          col += 12;
- 295   1          Display_Char_16x16_Custom(page, col, (hour_display % 10) + '0', highlight_hour_units);
- 296   1          col += 12;
- 297   1          Display_Char_16x16(page, col, ':');
- 298   1          col += 12;
- 299   1          Display_Char_16x16_Custom(page, col, (minute_display / 10) + '0', highlight_minute_tens);
- 300   1          col += 12;
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 6   
+ 283   1          col += 8;
+ 284   1          Display_Char_8x16_Custom(0, col, (year_display % 10) + '0', editing_date && date_highlight == 3);
+ 285   1          col += 8;
+ 286   1          Display_Char_8x16(0, col, '-');
+ 287   1          col += 8;
+ 288   1          Display_Char_8x16_Custom(0, col, (month_display / 10) + '0', editing_date && date_highlight == 4);
+ 289   1          col += 8;
+ 290   1          Display_Char_8x16_Custom(0, col, (month_display % 10) + '0', editing_date && date_highlight == 5);
+ 291   1          col += 8;
+ 292   1          Display_Char_8x16(0, col, '-');
+ 293   1          col += 8;
+ 294   1          Display_Char_8x16_Custom(0, col, (day_display / 10) + '0', editing_date && date_highlight == 6);
+ 295   1          col += 8;
+ 296   1          Display_Char_8x16_Custom(0, col, (day_display % 10) + '0', editing_date && date_highlight == 7);
+ 297   1      
+ 298   1          // 绘制英文星期缩写 (例如: 2025-11-14    Fri)
+ 299   1          {
+ 300   2              unsigned char dow = GetDayOfWeek(year_display, month_display, day_display);
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 6   
 
- 301   1          Display_Char_16x16_Custom(page, col, (minute_display % 10) + '0', highlight_minute_units);
- 302   1          col += 12;
- 303   1          Display_Char_16x16(page, col, ':');
- 304   1          col += 12;
- 305   1          Display_Char_16x16_Custom(page, col, (second_display / 10) + '0', highlight_second_pair);
- 306   1          col += 12;
- 307   1          Display_Char_16x16_Custom(page, col, (second_display % 10) + '0', highlight_second_pair);
- 308   1      
- 309   1          // 汉字绘制
- 310   1          Display_Hanzi16(6, 48, HANZI_MIAO);
- 311   1          Display_Hanzi16(6, 64, HANZI_BIAO);
- 312   1      
- 313   1          // 菜单光标绘制
- 314   1          if (g_prev_menu_pos != 0xFF && (g_prev_menu_pos != g_menu_pos || !menu_active))
- 315   1          {
- 316   2              Display_DrawMenuCursor(g_prev_menu_pos, 0);
- 317   2              g_prev_menu_pos = 0xFF; /* 标记为已清除 */
- 318   2          }
- 319   1          if (menu_active)
- 320   1          {
- 321   2              Display_DrawMenuCursor(0, g_menu_cursor_visible && (g_menu_pos == 0));
- 322   2              Display_DrawMenuCursor(1, g_menu_cursor_visible && (g_menu_pos == 1));
- 323   2              Display_DrawMenuCursor(2, g_menu_cursor_visible && (g_menu_pos == 2));
- 324   2              g_prev_menu_pos = g_menu_pos; /* 记录绘制的位置 */
- 325   2          }
- 326   1      }
- 327          
- 328          void Display_ResetStopwatch(void)
- 329          {
- 330   1          g_stopwatch_initialized = 0;
- 331   1          Display_Internal_ResetStopwatchVars(); // 复用: 重置所有g_prev_*变量
- 332   1      }
- 333          
- 334          void Display_StopwatchPage(void)
- 335          {
- 336   1          // 优化: 合并变量声明，减少行数
- 337   1          unsigned char idata hour, min, sec, ds, col, i, page, lap_index, lap_no;
- 338   1          bit first_draw = (!g_stopwatch_initialized) || (g_last_screen != DISPLAY_SCREEN_STOPWATCH);
- 339   1      
- 340   1          if (first_draw)
- 341   1          {
- 342   2              LCD_ClearArea(0, 7, 0, 127);
- 343   2              Display_Internal_ResetStopwatchVars(); /* 复用: 重置所有g_prev_*变量 */
- 344   2              g_stopwatch_initialized = 1;
- 345   2          }
- 346   1          g_last_screen = DISPLAY_SCREEN_STOPWATCH;
- 347   1      
- 348   1          Stopwatch_GetTime(&hour, &min, &sec, &ds);
- 349   1      
- 350   1          // 主秒表绘制
- 351   1          col = 16;
- 352   1          if (first_draw || g_prev_stop_hour != hour)
- 353   1          {
- 354   2              Display_Char_8x16(0, col, hour / 10 + '0');
- 355   2              Display_Char_8x16(0, col + 8, hour % 10 + '0');
- 356   2              g_prev_stop_hour = hour;
- 357   2          }
- 358   1          Display_Char_8x16(0, col + 16, ':');
- 359   1          if (first_draw || g_prev_stop_minute != min)
- 360   1          {
- 361   2              Display_Char_8x16(0, col + 24, min / 10 + '0');
- 362   2              Display_Char_8x16(0, col + 32, min % 10 + '0');
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 7   
+ 301   2              unsigned char wk_col = 100; /* 安全位置，避免与时间区域重叠 */
+ 302   2              /* 直接逐列绘制三个字符，避免通过通用接口出现混乱 */
+ 303   2              unsigned char ch_idx, i, idx_ext;
+ 304   2              for (ch_idx = 0; ch_idx < 3; ch_idx++) {
+ 305   3                  unsigned char c = g_week_abbrev[dow][ch_idx];
+ 306   3                  /* 直接用 A-Z 索引 */
+ 307   3                  idx_ext = c - 'A';
+ 308   3                  if (idx_ext < 26) {
+ 309   4                      for (i = 0; i < 8; i++) {
+ 310   5                          LCD_DrawByte(0, wk_col + ch_idx * 8 + i, Font_8x16_ext[idx_ext][i]);
+ 311   5                          LCD_DrawByte(1, wk_col + ch_idx * 8 + i, Font_8x16_ext[idx_ext][i + 8]);
+ 312   5                      }
+ 313   4                  } else {
+ 314   4                      /* fallback: 空格 */
+ 315   4                      for (i = 0; i < 8; i++) {
+ 316   5                          LCD_DrawByte(0, wk_col + ch_idx * 8 + i, Font_8x16[13][i]);
+ 317   5                          LCD_DrawByte(1, wk_col + ch_idx * 8 + i, Font_8x16[13][i + 8]);
+ 318   5                      }
+ 319   4                  }
+ 320   3              }
+ 321   2          }
+ 322   1      
+ 323   1          // 时间绘制
+ 324   1          page = 3;
+ 325   1          {
+ 326   2              total_width = 14 + (8 - 1) * 14;
+ 327   2              col = (128 - total_width) / 2;
+ 328   2          }
+ 329   1          Display_Char_16x16_Custom(page, col, (hour_display / 10) + '0', highlight_hour_tens);
+ 330   1          col += 14;
+ 331   1          Display_Char_16x16_Custom(page, col, (hour_display % 10) + '0', highlight_hour_units);
+ 332   1          col += 14;
+ 333   1          Display_Char_16x16(page, col, ':');
+ 334   1          col += 14;
+ 335   1          Display_Char_16x16_Custom(page, col, (minute_display / 10) + '0', highlight_minute_tens);
+ 336   1          col += 14;
+ 337   1          Display_Char_16x16_Custom(page, col, (minute_display % 10) + '0', highlight_minute_units);
+ 338   1          col += 14;
+ 339   1          Display_Char_16x16(page, col, ':');
+ 340   1          col += 14;
+ 341   1          Display_Char_16x16_Custom(page, col, (second_display / 10) + '0', highlight_second_pair);
+ 342   1          col += 14;
+ 343   1          Display_Char_16x16_Custom(page, col, (second_display % 10) + '0', highlight_second_pair);
+ 344   1      
+ 345   1          // 汉字绘制
+ 346   1          Display_Hanzi16(6, 48, HANZI_MIAO);
+ 347   1          Display_Hanzi16(6, 64, HANZI_BIAO);
+ 348   1      
+ 349   1          // 菜单光标绘制
+ 350   1          if (g_prev_menu_pos != 0xFF && (g_prev_menu_pos != g_menu_pos || !menu_active))
+ 351   1          {
+ 352   2              Display_DrawMenuCursor(g_prev_menu_pos, 0);
+ 353   2              g_prev_menu_pos = 0xFF; /* 标记为已清除 */
+ 354   2          }
+ 355   1          if (menu_active)
+ 356   1          {
+ 357   2              Display_DrawMenuCursor(0, g_menu_cursor_visible && (g_menu_pos == 0));
+ 358   2              Display_DrawMenuCursor(1, g_menu_cursor_visible && (g_menu_pos == 1));
+ 359   2              Display_DrawMenuCursor(2, g_menu_cursor_visible && (g_menu_pos == 2));
+ 360   2              g_prev_menu_pos = g_menu_pos; /* 记录绘制的位置 */
+ 361   2          }
+ 362   1      }
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 7   
 
- 363   2              g_prev_stop_minute = min;
- 364   2          }
- 365   1          Display_Char_8x16(0, col + 40, ':');
- 366   1          if (first_draw || g_prev_stop_second != sec)
- 367   1          {
- 368   2              Display_Char_8x16(0, col + 48, sec / 10 + '0');
- 369   2              Display_Char_8x16(0, col + 56, sec % 10 + '0');
- 370   2              g_prev_stop_second = sec;
- 371   2          }
- 372   1      
- 373   1          Display_DrawDecimalPoint(0, col + 64); // 复用: 绘制小数点
- 374   1      
- 375   1          if (first_draw || g_prev_stop_decisecond != ds)
- 376   1          {
- 377   2              Display_Char_8x16(0, col + 72, ds + '0');
- 378   2              g_prev_stop_decisecond = ds;
- 379   2          }
- 380   1      
- 381   1          // 计次列表绘制
- 382   1          for (i = 0; i < 3; i++)
- 383   1          {
- 384   2              page = 2 + i * 2;
- 385   2              if (i < g_lap_count)
- 386   2              {
- 387   3                  lap_index = g_lap_count - 1 - i;
- 388   3                  lap_no = lap_index + 1;
- 389   3      
- 390   3                  /* 复用: NeedLapUpdate 辅助函数 */
- 391   3                  if (first_draw || NeedLapUpdate(i, lap_index))
- 392   3                  {
- 393   4                      unsigned char lap_col = 0;
- 394   4                      unsigned char base_col = 16 + 16;
- 395   4                      LCD_ClearArea(page, page + 1, 0, 127);
- 396   4      
- 397   4                      Display_Char_8x16(page, lap_col, 'L');
- 398   4                      lap_col += 8;
- 399   4                      Display_Char_8x16(page, lap_col, (lap_no >= 10) ? (lap_no / 10 + '0') : ' ');
- 400   4                      lap_col += 8;
- 401   4                      Display_Char_8x16(page, lap_col, lap_no % 10 + '0');
- 402   4      
- 403   4                      Display_DrawLapTime(page, base_col, lap_index); // 复用: 绘制计次时间
- 404   4                      Display_SetPrevLap(i, lap_index);               // 复用: 更新缓存
- 405   4                  }
- 406   3              }
- 407   2              else
- 408   2              {
- 409   3                  if (first_draw || g_prev_lap_index[i] != 0xFF)
- 410   3                  {
- 411   4                      LCD_ClearArea(page, page + 1, 0, 127);
- 412   4                      Display_ResetPrevLap(i); /* 复用: 重置缓存 */
- 413   4                  }
- 414   3              }
+ 363          
+ 364          void Display_ResetStopwatch(void)
+ 365          {
+ 366   1          g_stopwatch_initialized = 0;
+ 367   1          Display_Internal_ResetStopwatchVars(); // 复用: 重置所有g_prev_*变量
+ 368   1      }
+ 369          
+ 370          void Display_StopwatchPage(void)
+ 371          {
+ 372   1          // 优化: 合并变量声明，减少行数
+ 373   1          unsigned char idata hour, min, sec, ds, col, i, page, lap_index, lap_no;
+ 374   1          bit first_draw = (!g_stopwatch_initialized) || (g_last_screen != DISPLAY_SCREEN_STOPWATCH);
+ 375   1      
+ 376   1          if (first_draw)
+ 377   1          {
+ 378   2              LCD_ClearArea(0, 7, 0, 127);
+ 379   2              Display_Internal_ResetStopwatchVars(); /* 复用: 重置所有g_prev_*变量 */
+ 380   2              g_stopwatch_initialized = 1;
+ 381   2          }
+ 382   1          g_last_screen = DISPLAY_SCREEN_STOPWATCH;
+ 383   1      
+ 384   1          Stopwatch_GetTime(&hour, &min, &sec, &ds);
+ 385   1      
+ 386   1          // 主秒表绘制
+ 387   1          col = 16;
+ 388   1          if (first_draw || g_prev_stop_hour != hour)
+ 389   1          {
+ 390   2              Display_Char_8x16(0, col, hour / 10 + '0');
+ 391   2              Display_Char_8x16(0, col + 8, hour % 10 + '0');
+ 392   2              g_prev_stop_hour = hour;
+ 393   2          }
+ 394   1          Display_Char_8x16(0, col + 16, ':');
+ 395   1          if (first_draw || g_prev_stop_minute != min)
+ 396   1          {
+ 397   2              Display_Char_8x16(0, col + 24, min / 10 + '0');
+ 398   2              Display_Char_8x16(0, col + 32, min % 10 + '0');
+ 399   2              g_prev_stop_minute = min;
+ 400   2          }
+ 401   1          Display_Char_8x16(0, col + 40, ':');
+ 402   1          if (first_draw || g_prev_stop_second != sec)
+ 403   1          {
+ 404   2              Display_Char_8x16(0, col + 48, sec / 10 + '0');
+ 405   2              Display_Char_8x16(0, col + 56, sec % 10 + '0');
+ 406   2              g_prev_stop_second = sec;
+ 407   2          }
+ 408   1      
+ 409   1          Display_DrawDecimalPoint(0, col + 64); // 复用: 绘制小数点
+ 410   1      
+ 411   1          if (first_draw || g_prev_stop_decisecond != ds)
+ 412   1          {
+ 413   2              Display_Char_8x16(0, col + 72, ds + '0');
+ 414   2              g_prev_stop_decisecond = ds;
  415   2          }
- 416   1      }
- 417          
- 418          void Display_LapViewPage(void)
- 419          {
- 420   1          unsigned char idata i, j, start_index, page, lap_no, base_col;
- 421   1      
- 422   1          if (g_last_screen != DISPLAY_SCREEN_LAP)
- 423   1          {
- 424   2              LCD_Clear();
-C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 13:52:48 PAGE 8   
+ 416   1      
+ 417   1          // 计次列表绘制
+ 418   1          for (i = 0; i < 3; i++)
+ 419   1          {
+ 420   2              page = 2 + i * 2;
+ 421   2              if (i < g_lap_count)
+ 422   2              {
+ 423   3                  lap_index = g_lap_count - 1 - i;
+ 424   3                  lap_no = lap_index + 1;
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 8   
 
- 425   2          }
- 426   1          g_last_screen = DISPLAY_SCREEN_LAP;
- 427   1      
- 428   1          start_index = g_lap_view_page * 4;
- 429   1      
- 430   1          for (i = 0; i < 4; i++)
- 431   1          {
- 432   2              page = i * 2;
- 433   2              if ((start_index + i) < g_lap_count)
- 434   2              {
- 435   3                  j = start_index + i;
- 436   3                  lap_no = j + 1;
- 437   3                  LCD_ClearArea(page, page + 1, 0, 127);
- 438   3      
- 439   3                  Display_Char_8x16(page, 0, (lap_no >= 10) ? (lap_no / 10 + '0') : ' ');
- 440   3                  Display_Char_8x16(page, 8, (lap_no % 10) + '0');
- 441   3                  base_col = 16 + 16;
- 442   3      
- 443   3                  Display_DrawLapTime(page, base_col, j); // 复用: 绘制计次时间
- 444   3              }
- 445   2              else
- 446   2              {
- 447   3                  LCD_ClearArea(page, page + 1, 0, 127);
- 448   3              }
- 449   2          }
- 450   1      }
+ 425   3      
+ 426   3                  /* 复用: NeedLapUpdate 辅助函数 */
+ 427   3                  if (first_draw || NeedLapUpdate(i, lap_index))
+ 428   3                  {
+ 429   4                      unsigned char lap_col = 0;
+ 430   4                      unsigned char base_col = 16 + 16;
+ 431   4                      LCD_ClearArea(page, page + 1, 0, 127);
+ 432   4      
+ 433   4                      Display_Char_8x16(page, lap_col, 'L');
+ 434   4                      lap_col += 8;
+ 435   4                      Display_Char_8x16(page, lap_col, (lap_no >= 10) ? (lap_no / 10 + '0') : ' ');
+ 436   4                      lap_col += 8;
+ 437   4                      Display_Char_8x16(page, lap_col, lap_no % 10 + '0');
+ 438   4      
+ 439   4                      Display_DrawLapTime(page, base_col, lap_index); // 复用: 绘制计次时间
+ 440   4                      Display_SetPrevLap(i, lap_index);               // 复用: 更新缓存
+ 441   4                  }
+ 442   3              }
+ 443   2              else
+ 444   2              {
+ 445   3                  if (first_draw || g_prev_lap_index[i] != 0xFF)
+ 446   3                  {
+ 447   4                      LCD_ClearArea(page, page + 1, 0, 127);
+ 448   4                      Display_ResetPrevLap(i); /* 复用: 重置缓存 */
+ 449   4                  }
+ 450   3              }
+ 451   2          }
+ 452   1      }
+ 453          
+ 454          void Display_LapViewPage(void)
+ 455          {
+ 456   1          unsigned char idata i, j, start_index, page, lap_no, base_col;
+ 457   1      
+ 458   1          if (g_last_screen != DISPLAY_SCREEN_LAP)
+ 459   1          {
+ 460   2              LCD_Clear();
+ 461   2          }
+ 462   1          g_last_screen = DISPLAY_SCREEN_LAP;
+ 463   1      
+ 464   1          start_index = g_lap_view_page * 4;
+ 465   1      
+ 466   1          for (i = 0; i < 4; i++)
+ 467   1          {
+ 468   2              page = i * 2;
+ 469   2              if ((start_index + i) < g_lap_count)
+ 470   2              {
+ 471   3                  j = start_index + i;
+ 472   3                  lap_no = j + 1;
+ 473   3                  LCD_ClearArea(page, page + 1, 0, 127);
+ 474   3      
+ 475   3                  Display_Char_8x16(page, 0, (lap_no >= 10) ? (lap_no / 10 + '0') : ' ');
+ 476   3                  Display_Char_8x16(page, 8, (lap_no % 10) + '0');
+ 477   3                  base_col = 16 + 16;
+ 478   3      
+ 479   3                  Display_DrawLapTime(page, base_col, j); // 复用: 绘制计次时间
+ 480   3              }
+ 481   2              else
+ 482   2              {
+ 483   3                  LCD_ClearArea(page, page + 1, 0, 127);
+ 484   3              }
+ 485   2          }
+ 486   1      }
+C51 COMPILER V9.60.7.0   DISPLAY                                                           11/18/2025 20:54:27 PAGE 9   
+
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2429    ----
-   CONSTANT SIZE    =     80    ----
+   CODE SIZE        =   2662    ----
+   CONSTANT SIZE    =    108    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      34
+   DATA SIZE        =   ----      40
    IDATA SIZE       =     21      17
    BIT SIZE         =      1      13
 END OF MODULE INFORMATION.

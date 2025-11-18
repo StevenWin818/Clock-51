@@ -1,4 +1,4 @@
-#include "buzzer.h"
+ #include "buzzer.h"
 #include "clock.h"
 
 // ===== 共享状态：在 ISR 与主线程之间传递，建议 volatile =====

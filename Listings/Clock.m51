@@ -1,4 +1,4 @@
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                    11/18/2025  13:56:24  PAGE 1
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                    11/18/2025  21:35:15  PAGE 1
 
 
 BL51 BANKED LINKER/LOCATER V6.22.4.0, INVOKED BY:
@@ -52,95 +52,95 @@ LINK MAP OF MODULE:  .\Objects\Clock (BUZZER)
             BIT     0022H.0   0000H.1   UNIT         ?BI?DISPLAY
             BIT     0022H.1   0000H.1   UNIT         ?BI?MAIN
                     0022H.2   0000H.6                *** GAP ***
-            DATA    0023H     002CH     UNIT         _DATA_GROUP_
-            IDATA   004FH     0027H     UNIT         ?ID?STOPWATCH
-            IDATA   0076H     0015H     UNIT         ?ID?DISPLAY
-            IDATA   008BH     000AH     UNIT         _IDATA_GROUP_
-            IDATA   0095H     0008H     UNIT         ?ID?CLOCK
-            IDATA   009DH     0001H     UNIT         ?STACK
+            DATA    0023H     0032H     UNIT         _DATA_GROUP_
+            DATA    0055H     000CH     UNIT         ?DT?CLOCK
+            IDATA   0061H     0027H     UNIT         ?ID?STOPWATCH
+            IDATA   0088H     0015H     UNIT         ?ID?DISPLAY
+            IDATA   009DH     000AH     UNIT         _IDATA_GROUP_
+            IDATA   00A7H     0008H     UNIT         ?ID?CLOCK
+            IDATA   00AFH     0001H     UNIT         ?STACK
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  21:35:15  PAGE 2
 
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 2
 
 
             * * * * * * *   C O D E   M E M O R Y   * * * * * * *
             CODE    0000H     0003H     ABSOLUTE     
             CODE    0003H     0008H     INBLOCK      ?PR?BUZZER_CANCELNOW?BUZZER
             CODE    000BH     0003H     ABSOLUTE     
-            CODE    000EH     0720H     UNIT         ?CO?FONT
-            CODE    072EH     00CFH     INBLOCK      ?PR?_STOPWATCH_GETTIME?STOPWATCH
-                    07FDH     0003H                  *** GAP ***
-            CODE    0800H     03A4H     INBLOCK      ?PR?_HANDLE_DATESET_KEYS?MAIN
-            CODE    0BA4H     02EAH     INBLOCK      ?PR?DISPLAY_HOMEPAGE?DISPLAY
-            CODE    0E8EH     0295H     UNIT         ?C?LIB_CODE
-            CODE    1123H     0231H     INBLOCK      ?PR?_HANDLE_TIMESET_KEYS?MAIN
-            CODE    1354H     01EEH     INBLOCK      ?PR?DISPLAY_STOPWATCHPAGE?DISPLAY
-            CODE    1542H     0108H     INBLOCK      ?PR?MAIN?MAIN
-            CODE    164AH     00E2H     INBLOCK      ?PR?_DISPLAY_DRAWLAPTIME?DISPLAY
-            CODE    172CH     00B1H     INBLOCK      ?PR?DISPLAY_LAPVIEWPAGE?DISPLAY
-            CODE    17DDH     008CH     UNIT         ?C_C51STARTUP
-            CODE    1869H     0081H     INBLOCK      ?PR?_DISPLAY_CHAR_16X16_CUSTOM?DISPLAY
-            CODE    18EAH     007CH     INBLOCK      ?PR?_DISPLAY_CHAR_8X16_CUSTOM?DISPLAY
-            CODE    1966H     0074H     INBLOCK      ?PR?_DISPLAY_DRAWMENUCURSOR?DISPLAY
-            CODE    19DAH     0063H     INBLOCK      ?PR?_DISPLAY_HANZI16?DISPLAY
-            CODE    1A3DH     0061H     UNIT         ?C_INITSEG
-            CODE    1A9EH     0060H     INBLOCK      ?PR?_HANDLE_MENU_KEYS?MAIN
-            CODE    1AFEH     005FH     INBLOCK      ?PR?BUZZER_CHECK?BUZZER
-            CODE    1B5DH     005BH     INBLOCK      ?PR?STOPWATCH_ADDLAP?STOPWATCH
-            CODE    1BB8H     0050H     UNIT         ?CO?DISPLAY
-            CODE    1C08H     0050H     INBLOCK      ?PR?KEY_SCAN?KEY
-            CODE    1C58H     004FH     INBLOCK      ?PR?_HANDLE_LAPVIEW_KEYS?MAIN
-            CODE    1CA7H     004DH     INBLOCK      ?PR?LCD_INIT?LCD_KS0108
-            CODE    1CF4H     004DH     INBLOCK      ?PR?_HANDLE_STOPWATCH_KEYS?MAIN
-            CODE    1D41H     004CH     INBLOCK      ?PR?_NEEDLAPUPDATE?DISPLAY
-            CODE    1D8DH     004CH     INBLOCK      ?PR?TIMER0_ISR?MAIN
-            CODE    1DD9H     0047H     INBLOCK      ?PR?DATETIME_ADDSECOND?CLOCK
-            CODE    1E20H     0047H     INBLOCK      ?PR?_DISPLAY_SETPREVLAP?DISPLAY
-            CODE    1E67H     003FH     INBLOCK      ?PR?_DISPLAY_DRAWDECIMALPOINT?DISPLAY
-            CODE    1EA6H     0036H     INBLOCK      ?PR?KEY_GETPRESSED?KEY
-            CODE    1EDCH     0034H     INBLOCK      ?PR?_LCD_SETPOS?LCD_KS0108
-            CODE    1F10H     0033H     INBLOCK      ?PR?_GETDAYSINMONTH?CLOCK
-            CODE    1F43H     002DH     INBLOCK      ?PR?_GETCHARINDEX?FONT
-            CODE    1F70H     002CH     INBLOCK      ?PR?_LCD_CHECKBUSY?LCD_KS0108
-            CODE    1F9CH     002AH     INBLOCK      ?PR?_BUZZER_PULSE?BUZZER
-            CODE    1FC6H     0029H     INBLOCK      ?PR?_LCD_CLEARAREA?LCD_KS0108
-            CODE    1FEFH     0011H     INBLOCK      ?PR?CLOCK_UPDATE?CLOCK
-            CODE    2000H     0028H     INBLOCK      ?PR?_ISLEAPYEAR?CLOCK
-            CODE    2028H     0026H     INBLOCK      ?PR?DISPLAY_INTERNAL_RESETSTOPWATCHVARS?DISPLAY
-            CODE    204EH     0024H     INBLOCK      ?PR?BUZZER_REQUESTCANCELCURRENTTOP?BUZZER
-            CODE    2072H     0023H     INBLOCK      ?PR?TEMPTIME_TICK?MAIN
-            CODE    2095H     0022H     INBLOCK      ?PR?LCD_CLEAR?LCD_KS0108
-            CODE    20B7H     0020H     INBLOCK      ?PR?BUZZER_UPDATE?BUZZER
-            CODE    20D7H     001FH     INBLOCK      ?PR?_DISPLAY_RESETPREVLAP?DISPLAY
-            CODE    20F6H     001EH     INBLOCK      ?PR?STOPWATCH_UPDATE?STOPWATCH
-            CODE    2114H     001BH     INBLOCK      ?PR?KEY_READVALUE?KEY
-            CODE    212FH     001AH     INBLOCK      ?PR?_LCD_DRAWBYTE?LCD_KS0108
-            CODE    2149H     001AH     INBLOCK      ?PR?ENSURETEMPDAYVALID?MAIN
-            CODE    2163H     0017H     INBLOCK      ?PR?LCD_DELAY?LCD_KS0108
-            CODE    217AH     0013H     INBLOCK      ?PR?CLOCK_INIT?CLOCK
-            CODE    218DH     0013H     INBLOCK      ?PR?STOPWATCH_INIT?STOPWATCH
-            CODE    21A0H     0013H     INBLOCK      ?PR?STOPWATCH_CLEAR?STOPWATCH
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 3
+            CODE    000EH     0440H     UNIT         ?CO?FONT
+            CODE    044EH     03A4H     INBLOCK      ?PR?_HANDLE_DATESET_KEYS?MAIN
+            CODE    07F2H     000EH     INBLOCK      ?PR?_DATETIME_SETDATE?CLOCK
+            CODE    0800H     03D3H     INBLOCK      ?PR?DISPLAY_HOMEPAGE?DISPLAY
+            CODE    0BD3H     0295H     UNIT         ?C?LIB_CODE
+            CODE    0E68H     0108H     INBLOCK      ?PR?MAIN?MAIN
+            CODE    0F70H     008CH     UNIT         ?C_C51STARTUP
+            CODE    0FFCH     0004H     INBLOCK      ?PR?KEY_INIT?KEY
+            CODE    1000H     0231H     INBLOCK      ?PR?_HANDLE_TIMESET_KEYS?MAIN
+            CODE    1231H     01EEH     INBLOCK      ?PR?DISPLAY_STOPWATCHPAGE?DISPLAY
+            CODE    141FH     00E2H     INBLOCK      ?PR?_DISPLAY_DRAWLAPTIME?DISPLAY
+            CODE    1501H     00CFH     INBLOCK      ?PR?_STOPWATCH_GETTIME?STOPWATCH
+            CODE    15D0H     00B1H     INBLOCK      ?PR?DISPLAY_LAPVIEWPAGE?DISPLAY
+            CODE    1681H     0081H     INBLOCK      ?PR?_DISPLAY_CHAR_16X16_CUSTOM?DISPLAY
+            CODE    1702H     007CH     INBLOCK      ?PR?_DISPLAY_CHAR_8X16_CUSTOM?DISPLAY
+            CODE    177EH     0074H     INBLOCK      ?PR?_DISPLAY_DRAWMENUCURSOR?DISPLAY
+            CODE    17F2H     006FH     UNIT         ?C_INITSEG
+            CODE    1861H     006CH     INBLOCK      ?PR?_GETDAYOFWEEK?CLOCK
+            CODE    18CDH     006CH     UNIT         ?CO?DISPLAY
+            CODE    1939H     0063H     INBLOCK      ?PR?_DISPLAY_HANZI16?DISPLAY
+            CODE    199CH     0062H     INBLOCK      ?PR?_HANDLE_MENU_KEYS?MAIN
+            CODE    19FEH     005FH     INBLOCK      ?PR?BUZZER_CHECK?BUZZER
+            CODE    1A5DH     005BH     INBLOCK      ?PR?STOPWATCH_ADDLAP?STOPWATCH
+            CODE    1AB8H     0050H     INBLOCK      ?PR?KEY_SCAN?KEY
+            CODE    1B08H     004FH     INBLOCK      ?PR?_HANDLE_LAPVIEW_KEYS?MAIN
+            CODE    1B57H     004DH     INBLOCK      ?PR?LCD_INIT?LCD_KS0108
+            CODE    1BA4H     004DH     INBLOCK      ?PR?_HANDLE_STOPWATCH_KEYS?MAIN
+            CODE    1BF1H     004CH     INBLOCK      ?PR?_NEEDLAPUPDATE?DISPLAY
+            CODE    1C3DH     004CH     INBLOCK      ?PR?TIMER0_ISR?MAIN
+            CODE    1C89H     0047H     INBLOCK      ?PR?DATETIME_ADDSECOND?CLOCK
+            CODE    1CD0H     0047H     INBLOCK      ?PR?_DISPLAY_SETPREVLAP?DISPLAY
+            CODE    1D17H     003FH     INBLOCK      ?PR?_DISPLAY_DRAWDECIMALPOINT?DISPLAY
+            CODE    1D56H     0036H     INBLOCK      ?PR?KEY_GETPRESSED?KEY
+            CODE    1D8CH     0034H     INBLOCK      ?PR?_LCD_SETPOS?LCD_KS0108
+            CODE    1DC0H     0033H     INBLOCK      ?PR?_GETDAYSINMONTH?CLOCK
+            CODE    1DF3H     002DH     INBLOCK      ?PR?_GETCHARINDEX?FONT
+            CODE    1E20H     002CH     INBLOCK      ?PR?_LCD_CHECKBUSY?LCD_KS0108
+            CODE    1E4CH     002AH     INBLOCK      ?PR?_BUZZER_PULSE?BUZZER
+            CODE    1E76H     0029H     INBLOCK      ?PR?_LCD_CLEARAREA?LCD_KS0108
+            CODE    1E9FH     0028H     INBLOCK      ?PR?_ISLEAPYEAR?CLOCK
+            CODE    1EC7H     0026H     INBLOCK      ?PR?DISPLAY_INTERNAL_RESETSTOPWATCHVARS?DISPLAY
+            CODE    1EEDH     0024H     INBLOCK      ?PR?BUZZER_REQUESTCANCELCURRENTTOP?BUZZER
+            CODE    1F11H     0023H     INBLOCK      ?PR?TEMPTIME_TICK?MAIN
+            CODE    1F34H     0022H     INBLOCK      ?PR?LCD_CLEAR?LCD_KS0108
+            CODE    1F56H     0020H     INBLOCK      ?PR?BUZZER_UPDATE?BUZZER
+            CODE    1F76H     001FH     INBLOCK      ?PR?_DISPLAY_RESETPREVLAP?DISPLAY
+            CODE    1F95H     001EH     INBLOCK      ?PR?STOPWATCH_UPDATE?STOPWATCH
+            CODE    1FB3H     001BH     INBLOCK      ?PR?KEY_READVALUE?KEY
+            CODE    1FCEH     001AH     INBLOCK      ?PR?_LCD_DRAWBYTE?LCD_KS0108
+            CODE    1FE8H     0017H     INBLOCK      ?PR?LCD_DELAY?LCD_KS0108
+                    1FFFH     0001H                  *** GAP ***
+            CODE    2000H     0013H     INBLOCK      ?PR?CLOCK_INIT?CLOCK
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  21:35:15  PAGE 3
 
 
-            CODE    21B3H     0012H     INBLOCK      ?PR?_BUZZER_START?BUZZER
-            CODE    21C5H     0012H     INBLOCK      ?PR?_DISPLAY_CHAR_8X16?DISPLAY
-            CODE    21D7H     0010H     INBLOCK      ?PR?BUZZER_INIT?BUZZER
-            CODE    21E7H     0010H     INBLOCK      ?PR?_DISPLAY_CHAR_16X16?DISPLAY
-            CODE    21F7H     000EH     INBLOCK      ?PR?_DATETIME_SETDATE?CLOCK
-            CODE    2205H     000EH     INBLOCK      ?PR?_DATETIME_SETTIME?CLOCK
-            CODE    2213H     000DH     INBLOCK      ?PR?_LCD_SELECT?LCD_KS0108
-            CODE    2220H     000DH     INBLOCK      ?PR?_HANDLE_HOMEPAGE_KEYS?MAIN
-            CODE    222DH     000CH     UNIT         ?CO?CLOCK
-            CODE    2239H     000BH     INBLOCK      ?PR?_LCD_WRITECMD?LCD_KS0108
-            CODE    2244H     000BH     INBLOCK      ?PR?_LCD_WRITEDATA?LCD_KS0108
-            CODE    224FH     0006H     INBLOCK      ?PR?REFRESHAFTEREDIT?MAIN
-            CODE    2255H     0005H     INBLOCK      ?PR?BUZZER_SHORT?BUZZER
-            CODE    225AH     0005H     INBLOCK      ?PR?BUZZER_LONG?BUZZER
-            CODE    225FH     0005H     INBLOCK      ?PR?DISPLAY_RESETSTOPWATCH?DISPLAY
-            CODE    2264H     0005H     INBLOCK      ?PR?LCD_DESELECT?LCD_KS0108
-            CODE    2269H     0005H     INBLOCK      ?PR?STOPWATCH_START?STOPWATCH
-            CODE    226EH     0005H     INBLOCK      ?PR?STOPWATCH_PAUSE?STOPWATCH
-            CODE    2273H     0004H     INBLOCK      ?PR?KEY_INIT?KEY
+            CODE    2013H     0013H     INBLOCK      ?PR?STOPWATCH_INIT?STOPWATCH
+            CODE    2026H     0013H     INBLOCK      ?PR?STOPWATCH_CLEAR?STOPWATCH
+            CODE    2039H     0012H     INBLOCK      ?PR?_BUZZER_START?BUZZER
+            CODE    204BH     0012H     INBLOCK      ?PR?_DISPLAY_CHAR_8X16?DISPLAY
+            CODE    205DH     0011H     INBLOCK      ?PR?CLOCK_UPDATE?CLOCK
+            CODE    206EH     0010H     INBLOCK      ?PR?BUZZER_INIT?BUZZER
+            CODE    207EH     0010H     INBLOCK      ?PR?_DISPLAY_CHAR_16X16?DISPLAY
+            CODE    208EH     000EH     INBLOCK      ?PR?_DATETIME_SETTIME?CLOCK
+            CODE    209CH     000DH     INBLOCK      ?PR?_LCD_SELECT?LCD_KS0108
+            CODE    20A9H     000DH     INBLOCK      ?PR?_HANDLE_HOMEPAGE_KEYS?MAIN
+            CODE    20B6H     000CH     UNIT         ?CO?CLOCK
+            CODE    20C2H     000BH     INBLOCK      ?PR?_LCD_WRITECMD?LCD_KS0108
+            CODE    20CDH     000BH     INBLOCK      ?PR?_LCD_WRITEDATA?LCD_KS0108
+            CODE    20D8H     0005H     INBLOCK      ?PR?BUZZER_SHORT?BUZZER
+            CODE    20DDH     0005H     INBLOCK      ?PR?BUZZER_LONG?BUZZER
+            CODE    20E2H     0005H     INBLOCK      ?PR?DISPLAY_RESETSTOPWATCH?DISPLAY
+            CODE    20E7H     0005H     INBLOCK      ?PR?LCD_DESELECT?LCD_KS0108
+            CODE    20ECH     0005H     INBLOCK      ?PR?STOPWATCH_START?STOPWATCH
+            CODE    20F1H     0005H     INBLOCK      ?PR?STOPWATCH_PAUSE?STOPWATCH
 
 
 
@@ -179,7 +179,7 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
   +--> ?PR?LCD_INIT?LCD_KS0108
   +--> ?PR?KEY_INIT?KEY
   +--> ?PR?STOPWATCH_INIT?STOPWATCH
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 4
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  21:35:15  PAGE 4
 
 
   +--> ?PR?BUZZER_INIT?BUZZER
@@ -217,7 +217,7 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
 ?PR?LCD_CLEAR?LCD_KS0108                         -----    -----      0035H    0002H      -----    -----
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
 
-?PR?_LCD_DRAWBYTE?LCD_KS0108                     -----    -----      004DH    0002H      -----    -----
+?PR?_LCD_DRAWBYTE?LCD_KS0108                     -----    -----      0053H    0002H      -----    -----
   +--> ?PR?_LCD_SETPOS?LCD_KS0108
   +--> ?PR?_LCD_WRITEDATA?LCD_KS0108
 
@@ -229,22 +229,26 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
   +--> ?PR?LCD_DELAY?LCD_KS0108
   +--> ?PR?LCD_DESELECT?LCD_KS0108
 
-?PR?DISPLAY_HOMEPAGE?DISPLAY                     0020H.0  0001H.1    003AH    000AH      -----    -----
+?PR?DISPLAY_HOMEPAGE?DISPLAY                     0020H.0  0001H.1    003AH    0010H      -----    -----
   +--> ?PR?_LCD_CLEARAREA?LCD_KS0108
   +--> ?PR?_DISPLAY_CHAR_8X16_CUSTOM?DISPLAY
   +--> ?PR?_DISPLAY_CHAR_8X16?DISPLAY
+  +--> ?PR?_GETDAYOFWEEK?CLOCK
+  +--> ?CO?DISPLAY
+  +--> ?CO?FONT
+  +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
   +--> ?PR?_DISPLAY_CHAR_16X16_CUSTOM?DISPLAY
   +--> ?PR?_DISPLAY_CHAR_16X16?DISPLAY
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  21:35:15  PAGE 5
+
+
   +--> ?PR?_DISPLAY_HANZI16?DISPLAY
   +--> ?PR?_DISPLAY_DRAWMENUCURSOR?DISPLAY
 
-?PR?_LCD_CLEARAREA?LCD_KS0108                    -----    -----      0047H    0006H      -----    -----
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 5
-
-
+?PR?_LCD_CLEARAREA?LCD_KS0108                    -----    -----      004DH    0006H      -----    -----
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
 
-?PR?_DISPLAY_CHAR_8X16_CUSTOM?DISPLAY            0021H.1  0000H.1    0044H    0005H      -----    -----
+?PR?_DISPLAY_CHAR_8X16_CUSTOM?DISPLAY            0021H.1  0000H.1    004AH    0005H      -----    -----
   +--> ?PR?_GETCHARINDEX?FONT
   +--> ?CO?FONT
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
@@ -252,7 +256,9 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
 ?PR?_DISPLAY_CHAR_8X16?DISPLAY                   -----    -----      -----    -----      -----    -----
   +--> ?PR?_DISPLAY_CHAR_8X16_CUSTOM?DISPLAY
 
-?PR?_DISPLAY_CHAR_16X16_CUSTOM?DISPLAY           0021H.1  0000H.1    0044H    0005H      -----    -----
+?PR?_GETDAYOFWEEK?CLOCK                          -----    -----      004AH    0002H      -----    -----
+
+?PR?_DISPLAY_CHAR_16X16_CUSTOM?DISPLAY           0021H.1  0000H.1    004AH    0005H      -----    -----
   +--> ?PR?_GETCHARINDEX?FONT
   +--> ?CO?FONT
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
@@ -260,11 +266,11 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
 ?PR?_DISPLAY_CHAR_16X16?DISPLAY                  -----    -----      -----    -----      -----    -----
   +--> ?PR?_DISPLAY_CHAR_16X16_CUSTOM?DISPLAY
 
-?PR?_DISPLAY_HANZI16?DISPLAY                     -----    -----      0044H    0004H      -----    -----
+?PR?_DISPLAY_HANZI16?DISPLAY                     -----    -----      004AH    0004H      -----    -----
   +--> ?CO?DISPLAY
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
 
-?PR?_DISPLAY_DRAWMENUCURSOR?DISPLAY              0021H.1  0000H.1    0044H    0003H      -----    -----
+?PR?_DISPLAY_DRAWMENUCURSOR?DISPLAY              0021H.1  0000H.1    004AH    0003H      -----    -----
   +--> ?CO?DISPLAY
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
   +--> ?PR?_LCD_CLEARAREA?LCD_KS0108
@@ -289,19 +295,19 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
 ?PR?DISPLAY_RESETSTOPWATCH?DISPLAY               -----    -----      -----    -----      -----    -----
   +--> ?PR?DISPLAY_INTERNAL_RESETSTOPWATCHVA...
 
-?PR?DISPLAY_INTERNAL_RESETSTOPWATCHVA...         -----    -----      -----    -----      0094H    0001H
+?PR?DISPLAY_INTERNAL_RESETSTOPWATCHVA...         -----    -----      -----    -----      00A6H    0001H
   +--> ?PR?_DISPLAY_RESETPREVLAP?DISPLAY
 
 ?PR?STOPWATCH_ADDLAP?STOPWATCH                   -----    -----      0034H    0004H      -----    -----
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  21:35:15  PAGE 6
+
+
   +--> ?PR?_STOPWATCH_GETTIME?STOPWATCH
 
 ?PR?_STOPWATCH_GETTIME?STOPWATCH                 -----    -----      0038H    0010H      -----    -----
 
-?PR?DISPLAY_STOPWATCHPAGE?DISPLAY                0020H.0  0000H.1    0035H    0002H      008BH    0009H
+?PR?DISPLAY_STOPWATCHPAGE?DISPLAY                0020H.0  0000H.1    0035H    0002H      009DH    0009H
   +--> ?PR?_LCD_CLEARAREA?LCD_KS0108
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 6
-
-
   +--> ?PR?DISPLAY_INTERNAL_RESETSTOPWATCHVA...
   +--> ?PR?_STOPWATCH_GETTIME?STOPWATCH
   +--> ?PR?_DISPLAY_CHAR_8X16?DISPLAY
@@ -311,14 +317,14 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
   +--> ?PR?_DISPLAY_SETPREVLAP?DISPLAY
   +--> ?PR?_DISPLAY_RESETPREVLAP?DISPLAY
 
-?PR?_DISPLAY_DRAWDECIMALPOINT?DISPLAY            -----    -----      003AH    0002H      0094H    0001H
+?PR?_DISPLAY_DRAWDECIMALPOINT?DISPLAY            -----    -----      003AH    0002H      00A6H    0001H
   +--> ?PR?_LCD_DRAWBYTE?LCD_KS0108
 
 ?PR?_DISPLAY_DRAWLAPTIME?DISPLAY                 -----    -----      0037H    0003H      -----    -----
   +--> ?PR?_DISPLAY_CHAR_8X16?DISPLAY
   +--> ?PR?_DISPLAY_DRAWDECIMALPOINT?DISPLAY
 
-?PR?DISPLAY_LAPVIEWPAGE?DISPLAY                  -----    -----      -----    -----      008BH    0006H
+?PR?DISPLAY_LAPVIEWPAGE?DISPLAY                  -----    -----      -----    -----      009DH    0006H
   +--> ?PR?LCD_CLEAR?LCD_KS0108
   +--> ?PR?_LCD_CLEARAREA?LCD_KS0108
   +--> ?PR?_DISPLAY_CHAR_8X16?DISPLAY
@@ -336,20 +342,12 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
   +--> ?PR?DISPLAY_HOMEPAGE?DISPLAY
 
 ?PR?_HANDLE_MENU_KEYS?MAIN                       -----    -----      0033H    0001H      -----    -----
-  +--> ?PR?REFRESHAFTEREDIT?MAIN
   +--> ?PR?DISPLAY_HOMEPAGE?DISPLAY
   +--> ?PR?DISPLAY_RESETSTOPWATCH?DISPLAY
   +--> ?PR?DISPLAY_STOPWATCHPAGE?DISPLAY
 
-?PR?REFRESHAFTEREDIT?MAIN                        -----    -----      -----    -----      -----    -----
-  +--> ?PR?ENSURETEMPDAYVALID?MAIN
-  +--> ?PR?DISPLAY_HOMEPAGE?DISPLAY
-
-?PR?ENSURETEMPDAYVALID?MAIN                      -----    -----      -----    -----      -----    -----
-  +--> ?PR?_GETDAYSINMONTH?CLOCK
-
 ?PR?_HANDLE_HOMEPAGE_KEYS?MAIN                   -----    -----      -----    -----      -----    -----
-  +--> ?PR?REFRESHAFTEREDIT?MAIN
+  +--> ?PR?DISPLAY_HOMEPAGE?DISPLAY
 
 ?PR?BUZZER_CHECK?BUZZER                          -----    -----      -----    -----      -----    -----
   +--> ?PR?BUZZER_SHORT?BUZZER
@@ -359,10 +357,10 @@ SEGMENT                                             BIT_GROUP          DATA_GROU
   +--> ?PR?_BUZZER_PULSE?BUZZER
 
 ?PR?_BUZZER_PULSE?BUZZER                         -----    -----      -----    -----      -----    -----
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 7
-
-
   +--> ?PR?_BUZZER_START?BUZZER
+
+BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  21:35:15  PAGE 7
+
 
 ?PR?BUZZER_LONG?BUZZER                           -----    -----      -----    -----      -----    -----
   +--> ?PR?_BUZZER_PULSE?BUZZER
@@ -375,43 +373,43 @@ SYMBOL TABLE OF MODULE:  .\Objects\Clock (BUZZER)
   ----------------------------------
 
   -------         MODULE        ?C?COPY
-  C:0F5EH         PUBLIC        ?C?COPY
+  C:0CA3H         PUBLIC        ?C?COPY
   -------         ENDMOD        ?C?COPY
 
   -------         MODULE        ?C?CSTPTR
-  C:0F84H         PUBLIC        ?C?CSTPTR
+  C:0CC9H         PUBLIC        ?C?CSTPTR
   -------         ENDMOD        ?C?CSTPTR
 
   -------         MODULE        ?C?IMUL
-  C:0F96H         PUBLIC        ?C?IMUL
+  C:0CDBH         PUBLIC        ?C?IMUL
   -------         ENDMOD        ?C?IMUL
 
   -------         MODULE        ?C?UIDIV
-  C:0FA8H         PUBLIC        ?C?UIDIV
+  C:0CEDH         PUBLIC        ?C?UIDIV
   -------         ENDMOD        ?C?UIDIV
 
   -------         MODULE        ?C?ULDIV
-  C:1039H         PUBLIC        ?C?ULDIV
+  C:0D7EH         PUBLIC        ?C?ULDIV
   -------         ENDMOD        ?C?ULDIV
 
   -------         MODULE        ?C?SLCMP
-  C:10CBH         PUBLIC        ?C?SLCMP
+  C:0E10H         PUBLIC        ?C?SLCMP
   -------         ENDMOD        ?C?SLCMP
 
   -------         MODULE        ?C?ULCMP
-  C:10E1H         PUBLIC        ?C?ULCMP
+  C:0E26H         PUBLIC        ?C?ULCMP
   -------         ENDMOD        ?C?ULCMP
 
   -------         MODULE        ?C?LLDIDATA
-  C:10F2H         PUBLIC        ?C?LLDIDATA
+  C:0E37H         PUBLIC        ?C?LLDIDATA
   -------         ENDMOD        ?C?LLDIDATA
 
   -------         MODULE        ?C?LSTIDATA
-  C:10FEH         PUBLIC        ?C?LSTIDATA
+  C:0E43H         PUBLIC        ?C?LSTIDATA
   -------         ENDMOD        ?C?LSTIDATA
 
   -------         MODULE        ?C?LSTKIDATA
-  C:110AH         PUBLIC        ?C?LSTKIDATA
+  C:0E4FH         PUBLIC        ?C?LSTKIDATA
   -------         ENDMOD        ?C?LSTKIDATA
 
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
@@ -419,8 +417,5 @@ SYMBOL TABLE OF MODULE:  .\Objects\Clock (BUZZER)
     CALLER1: ?PR?TIMER0_ISR?MAIN
     CALLER2: ?C_C51STARTUP
 
-BL51 BANKED LINKER/LOCATER V6.22.4.0                                                  11/18/2025  13:56:24  PAGE 8
-
-
-Program Size: data=154.2 xdata=0 code=8820
+Program Size: data=172.2 xdata=0 code=8437
 LINK/LOCATE RUN COMPLETE.  1 WARNING(S),  0 ERROR(S)

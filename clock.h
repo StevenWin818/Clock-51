@@ -26,5 +26,7 @@ unsigned char GetDaysInMonth(unsigned int year, unsigned char month);
 void DateTime_AddSecond(void);
 void DateTime_SetDate(unsigned int year, unsigned char month, unsigned char day);
 void DateTime_SetTime(unsigned char hour, unsigned char minute, unsigned char second);
+// 返回星期：0=Sunday, 1=Monday, ..., 6=Saturday
+unsigned char GetDayOfWeek(unsigned int year, unsigned char month, unsigned char day);
 
 #endif

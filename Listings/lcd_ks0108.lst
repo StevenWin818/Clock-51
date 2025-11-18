@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 22:45:14 PAGE 1   
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/18/2025 19:49:03 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE LCD_KS0108
@@ -62,7 +62,7 @@ line level    source
   52   1          LCD_RW = 0;  // 写
   53   1          LCD_Select(side);
   54   1          LCD_DATA = cmd;
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 22:45:14 PAGE 2   
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/18/2025 19:49:03 PAGE 2   
 
   55   1          LCD_E = 1;
   56   1          LCD_Delay();
@@ -126,7 +126,7 @@ line level    source
  114   1      }
  115          
  116          // 清屏
-C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/15/2025 22:45:14 PAGE 3   
+C51 COMPILER V9.60.7.0   LCD_KS0108                                                        11/18/2025 19:49:03 PAGE 3   
 
  117          void LCD_Clear(void) {
  118   1          unsigned char page, col;

@@ -27,6 +27,17 @@ enum
     HANZI_BIAO = 1
 };
 
+// 英文星期缩写表 (0=Sun .. 6=Sat)
+static const unsigned char code g_week_abbrev[7][4] = {
+    "SUN",
+    "MON",
+    "TUE",
+    "WED",
+    "THU",
+    "FRI",
+    "SAT",
+};
+
 #define DISPLAY_SCREEN_NONE 0xFF
 #define DISPLAY_SCREEN_HOME 0
 #define DISPLAY_SCREEN_STOPWATCH 2
@@ -73,11 +84,11 @@ static void Display_DrawMenuCursor(unsigned char line, bit visible)
 
     if (visible)
     {
-        /* 绘制箭头 */
-        static const unsigned char code arrow_bottom[8] = {
-            0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01};
+        /* 绘制箭头：已替换为自定义图形（前8字节为 top，后8字节为 bottom） */
         static const unsigned char code arrow_top[8] = {
-            0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80};
+            0xE0, 0xC0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00};
+        static const unsigned char code arrow_bottom[8] = {
+            0x0F, 0x07, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00};
         for (i = 0; i < 8; i++)
         {
             LCD_DrawByte(base_page, col + i, arrow_top[i]);
@@ -263,7 +274,7 @@ void Display_HomePage(void)
     highlight_second_pair = editing_time && (g_edit_pos == 0 || g_edit_pos == 1);
 
     // 日期绘制
-    col = 24;
+    col = 12;
     Display_Char_8x16_Custom(0, col, (year_display / 1000) + '0', editing_date && date_highlight == 0);
     col += 8;
     Display_Char_8x16_Custom(0, col, ((year_display / 100) % 10) + '0', editing_date && date_highlight == 1);
@@ -284,26 +295,51 @@ void Display_HomePage(void)
     col += 8;
     Display_Char_8x16_Custom(0, col, (day_display % 10) + '0', editing_date && date_highlight == 7);
 
+    // 绘制英文星期缩写 (例如: 2025-11-14    Fri)
+    {
+        unsigned char dow = GetDayOfWeek(year_display, month_display, day_display);
+        unsigned char wk_col = 100; /* 安全位置，避免与时间区域重叠 */
+        /* 直接逐列绘制三个字符，避免通过通用接口出现混乱 */
+        unsigned char ch_idx, i, idx_ext;
+        for (ch_idx = 0; ch_idx < 3; ch_idx++) {
+            unsigned char c = g_week_abbrev[dow][ch_idx];
+            /* 直接用 A-Z 索引 */
+            idx_ext = c - 'A';
+            if (idx_ext < 26) {
+                for (i = 0; i < 8; i++) {
+                    LCD_DrawByte(0, wk_col + ch_idx * 8 + i, Font_8x16_ext[idx_ext][i]);
+                    LCD_DrawByte(1, wk_col + ch_idx * 8 + i, Font_8x16_ext[idx_ext][i + 8]);
+                }
+            } else {
+                /* fallback: 空格 */
+                for (i = 0; i < 8; i++) {
+                    LCD_DrawByte(0, wk_col + ch_idx * 8 + i, Font_8x16[13][i]);
+                    LCD_DrawByte(1, wk_col + ch_idx * 8 + i, Font_8x16[13][i + 8]);
+                }
+            }
+        }
+    }
+
     // 时间绘制
     page = 3;
     {
-        total_width = 16 + (8 - 1) * 12;
+        total_width = 14 + (8 - 1) * 14;
         col = (128 - total_width) / 2;
     }
     Display_Char_16x16_Custom(page, col, (hour_display / 10) + '0', highlight_hour_tens);
-    col += 12;
+    col += 14;
     Display_Char_16x16_Custom(page, col, (hour_display % 10) + '0', highlight_hour_units);
-    col += 12;
+    col += 14;
     Display_Char_16x16(page, col, ':');
-    col += 12;
+    col += 14;
     Display_Char_16x16_Custom(page, col, (minute_display / 10) + '0', highlight_minute_tens);
-    col += 12;
+    col += 14;
     Display_Char_16x16_Custom(page, col, (minute_display % 10) + '0', highlight_minute_units);
-    col += 12;
+    col += 14;
     Display_Char_16x16(page, col, ':');
-    col += 12;
+    col += 14;
     Display_Char_16x16_Custom(page, col, (second_display / 10) + '0', highlight_second_pair);
-    col += 12;
+    col += 14;
     Display_Char_16x16_Custom(page, col, (second_display % 10) + '0', highlight_second_pair);
 
     // 汉字绘制

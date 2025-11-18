@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   KEY                                                               11/15/2025 05:58:03 PAGE 1   
+C51 COMPILER V9.60.7.0   KEY                                                               11/18/2025 19:49:03 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE KEY
@@ -62,7 +62,7 @@ line level    source
   52   6                              // 长按
   53   6                              if(g_key_info.key_state != KEY_LONG) {
   54   7                                  g_key_info.key_state = KEY_LONG;
-C51 COMPILER V9.60.7.0   KEY                                                               11/15/2025 05:58:03 PAGE 2   
+C51 COMPILER V9.60.7.0   KEY                                                               11/18/2025 19:49:03 PAGE 2   
 
   55   7                              }
   56   6                          }
