@@ -2,11 +2,6 @@
 #include "clock.h"
 
 // ===== 共享状态：在 ISR 与主线程之间传递，建议 volatile =====
-volatile bit g_buzzer_active = 0;
-// buzzer_data: 低6位 = 剩余tick(0~63)，高6位 = last_second(0~59)
-static volatile unsigned char buzzer_data = 0;
-#include "buzzer.h"
-#include "clock.h"
 
 // ===== 共享状态：在 ISR 与主线程之间传递，建议 volatile =====
 volatile bit g_buzzer_active = 0;
