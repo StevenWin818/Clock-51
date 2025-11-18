@@ -625,3 +625,7 @@ static void RefreshAfterEdit(void) {
     EnsureTempDayValid();
     Display_HomePage();
 }
+
+// 前置声明，避免在文件中后面定义但先使用时报错
+static void EnsureTempDayValid(void);
+static void RefreshAfterEdit(void);
