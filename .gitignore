@@ -13,10 +13,16 @@ Listings/
 tmp_build_ps1.txt
 
 
+# User/project backups and auxiliary folders
 Project Backups/
-Listings/
 tools/
-Objects/*
+
+# Objects: ignore all build outputs but keep the produced hex file tracked
 !Objects/Clock.hex
-Project Backups/
+
+# Misc
 main.lst
+*.bat
+*.ps1
+test*
+tmp*
