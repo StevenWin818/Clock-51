@@ -5,6 +5,10 @@
 volatile bit g_buzzer_active = 0;
 // buzzer_data: 低6位 = 剩余tick(0~63)，高6位 = last_second(0~59)
 static volatile unsigned char buzzer_data = 0;
+// 当为1时，表示已请求取消本次整点报时（只影响当前即将到来的整点）
+volatile bit g_buzzer_suppressed = 0;
+// 存储要被抑制的目标小时（0-23），当等于0xFF表示未设置
+static volatile unsigned char suppressed_target_hour = 0xFF;
 
 // 工具宏：存取低/高 6 位
 #define BUZZ_REMAINING_GET() (buzzer_data & 0x3F)
@@ -67,6 +71,30 @@ static void Buzzer_Pulse(unsigned char ticks)
     }
 }
 
+// 立即停止蜂鸣器当前发声并清除剩余时长
+void Buzzer_CancelNow(void)
+{
+    BUZZER = BUZZER_OFF;
+    g_buzzer_active = 0;
+    BUZZ_REMAINING_SET(0);
+}
+
+// 请求取消本次即将到来的整点报时（按下任意键时调用）
+void Buzzer_RequestCancelCurrentTop(void)
+{
+    unsigned char target_hour;
+    // 如果当前为59分，则目标小时为下一个小时
+    if (g_datetime.minute == 59) {
+        target_hour = (g_datetime.hour + 1) % 24;
+    } else {
+        target_hour = g_datetime.hour;
+    }
+    g_buzzer_suppressed = 1;
+    suppressed_target_hour = target_hour;
+    // 立即停止当前蜂鸣（如果在短响期间按键，也应停止声音）
+    Buzzer_CancelNow();
+}
+
 // 100ms 短响（10 tick）
 void Buzzer_Short(void)
 {
@@ -91,6 +119,19 @@ void Buzzer_Check(void)
         return;
     }
     BUZZ_LASTSEC_SET(now_sec);
+
+    // 如果已请求取消本次整点报时，则在被抑制的小时范围内屏蔽短响与长响
+    if (g_buzzer_suppressed)
+    {
+        // 如果当前小时已不是目标小时，说明整点已过去，取消抑制
+        if (suppressed_target_hour != 0xFF && g_datetime.hour != suppressed_target_hour) {
+            g_buzzer_suppressed = 0;
+            suppressed_target_hour = 0xFF;
+        } else {
+            // 如果仍在抑制期，屏蔽所有短/长响
+            return;
+        }
+    }
 
     // 59分的 55~59 秒短响（每秒一次）
     if (g_datetime.minute == 59 && now_sec >= 55 && now_sec <= 59)

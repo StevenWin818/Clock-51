@@ -494,6 +494,15 @@ void main(void) {
         // 获取按键
         key = Key_GetPressed();
 
+        // 如果在报时窗口（55秒 - 0秒）按下任意键，则请求取消本次整点报时
+        // 窗口判断：当分钟为59且秒在55~59，或分钟为0且秒为0（整点瞬间）
+        if (key) {
+            if ((g_datetime.minute == 59 && g_datetime.second >= 55 && g_datetime.second <= 59) ||
+                (g_datetime.minute == 0 && g_datetime.second == 0)) {
+                Buzzer_RequestCancelCurrentTop();
+            }
+        }
+
         // 菜单光标超时处理：有按键且在菜单状态则重置计数和显示
         if(g_system_state == STATE_MENU) {
             if(key) {

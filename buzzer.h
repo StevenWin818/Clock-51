@@ -26,4 +26,9 @@ void Buzzer_Short(void);  // 短响100ms
 void Buzzer_Long(void);   // 长响500ms
 void Buzzer_Check(void);  // 检查报时条件
 
+// 请求取消本次（即即将到来的）整点报时（仅影响当前整点实例）
+extern bit g_buzzer_suppressed;
+void Buzzer_RequestCancelCurrentTop(void);
+void Buzzer_CancelNow(void);
+
 #endif
