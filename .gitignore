@@ -14,7 +14,8 @@ tmp_build_ps1.txt
 
 
 Project Backups/*
-Listings/*
-tools/*
+Listings/
+tools/
 Objects/*
 !Objects/Clock.hex
+Project Backups/
