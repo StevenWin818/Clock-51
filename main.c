@@ -112,7 +112,7 @@ void Handle_Menu_Keys(unsigned char key) {
 void Handle_DateSet_Keys(unsigned char key) {
     unsigned char day_tens, day_ones, month_tens, month_ones;
     unsigned int year_digit;
-    
+
     if(key == (KEY_VAL_1 | 0x10)) {
         DateTime_SetDate(g_temp_year, g_temp_month, g_temp_day);
         g_system_state = STATE_HOME;
@@ -120,7 +120,6 @@ void Handle_DateSet_Keys(unsigned char key) {
         Display_HomePage();
         return;
     }
-
     if(key == KEY_VAL_1) {
         // KEY1: 切换到下一位编辑
         if(g_edit_pos >= 7) {
@@ -134,18 +133,21 @@ void Handle_DateSet_Keys(unsigned char key) {
             Display_HomePage();
         }
     } else if(key == KEY_VAL_2) {
-        // KEY2: 当前位+1
+        // KEY2: 当前位+1（逐位编辑；个位溢出向十位进位，但不影响更高位）
         if(g_edit_pos == 0) {
-            // 日的个位
+            // 日的个位 +1, 溢出进十位
             day_tens = g_temp_day / 10;
             day_ones = g_temp_day % 10;
             day_ones++;
-            if(day_ones > 9) day_ones = 0;
+            if(day_ones > 9) {
+                day_ones = 0;
+                if(day_tens >= 3) day_tens = 0; else day_tens++;
+            }
             g_temp_day = day_tens * 10 + day_ones;
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = 1;
         } else if(g_edit_pos == 1) {
-            // 日的十位
+            // 日的十位 +1
             day_ones = g_temp_day % 10;
             day_tens = g_temp_day / 10;
             day_tens++;
@@ -154,17 +156,20 @@ void Handle_DateSet_Keys(unsigned char key) {
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = 1;
         } else if(g_edit_pos == 2) {
-            // 月的个位
+            // 月的个位 +1, 溢出进十位
             month_tens = g_temp_month / 10;
             month_ones = g_temp_month % 10;
             month_ones++;
-            if(month_ones > 9) month_ones = 0;
+            if(month_ones > 9) {
+                month_ones = 0;
+                if(month_tens >= 1) month_tens = 0; else month_tens++;
+            }
             g_temp_month = month_tens * 10 + month_ones;
             if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         } else if(g_edit_pos == 3) {
-            // 月的十位
+            // 月的十位 +1
             month_ones = g_temp_month % 10;
             month_tens = g_temp_month / 10;
             month_tens++;
@@ -174,7 +179,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
-            // 年份的各位 (个位到千位)
+            // 年份的各位 (个位到千位) 保持原有行为
             year_digit = 1;
             for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
                 year_digit *= 10;
@@ -186,16 +191,22 @@ void Handle_DateSet_Keys(unsigned char key) {
         }
         Display_HomePage();
     } else if(key == KEY_VAL_3) {
-        // KEY3: 当前位-1
+        // KEY3: 当前位-1（逐位编辑；个位借位向十位借位，但不影响更高位）
         if(g_edit_pos == 0) {
+            // 日的个位 -1, 借位到十位
             day_tens = g_temp_day / 10;
             day_ones = g_temp_day % 10;
-            if(day_ones == 0) day_ones = 9;
-            else day_ones--;
+            if(day_ones == 0) {
+                day_ones = 9;
+                if(day_tens == 0) day_tens = 3; else day_tens--;
+            } else {
+                day_ones--;
+            }
             g_temp_day = day_tens * 10 + day_ones;
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         } else if(g_edit_pos == 1) {
+            // 日的十位 -1
             day_ones = g_temp_day % 10;
             day_tens = g_temp_day / 10;
             if(day_tens == 0) day_tens = 3;
@@ -204,15 +215,21 @@ void Handle_DateSet_Keys(unsigned char key) {
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         } else if(g_edit_pos == 2) {
+            // 月的个位 -1
             month_tens = g_temp_month / 10;
             month_ones = g_temp_month % 10;
-            if(month_ones == 0) month_ones = 9;
-            else month_ones--;
+            if(month_ones == 0) {
+                month_ones = 9;
+                if(month_tens == 0) month_tens = 1; else month_tens--;
+            } else {
+                month_ones--;
+            }
             g_temp_month = month_tens * 10 + month_ones;
             if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
             if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
                 g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
         } else if(g_edit_pos == 3) {
+            // 月的十位 -1
             month_ones = g_temp_month % 10;
             month_tens = g_temp_month / 10;
             if(month_tens == 0) month_tens = 1;
@@ -261,8 +278,7 @@ void Handle_TimeSet_Keys(unsigned char key)
 
     if (key == KEY_VAL_1)
     {
-        /* * 优化: 这是从 main() 的 switch 中移入的特殊逻辑。
-         * 作用：当编辑 "秒" (pos 0或1) 时，按 "下一位" (KEY_VAL_1)
+        /* 优化: 当编辑 "秒" (pos 0或1) 时，按 "下一位" (KEY_VAL_1)
          * 会直接跳到 "分钟" (pos 2)。
          */
         if (g_edit_pos == 0 || g_edit_pos == 1)
@@ -285,7 +301,7 @@ void Handle_TimeSet_Keys(unsigned char key)
     }
     else if (key == KEY_VAL_2)
     {
-        // KEY2: 当前位+1 (逻辑未更改)
+        // KEY2: 当前位+1 (按位进位，进位仅在同字段内传播)
         if (g_edit_pos <= 1)
         {
             g_temp_second = 0;
@@ -302,17 +318,19 @@ void Handle_TimeSet_Keys(unsigned char key)
         }
         else if (g_edit_pos == 2)
         {
+            // 分钟 个位 +1，溢出则十位+1（不影响小时）
             tens = g_temp_minute / 10;
             ones = g_temp_minute % 10;
             ones++;
-            if (ones > 9)
+            if (ones > 9) {
                 ones = 0;
+                if (tens >= 5) tens = 0; else tens++;
+            }
             g_temp_minute = tens * 10 + ones;
-            if (g_temp_minute >= 60)
-                g_temp_minute = 0;
         }
         else if (g_edit_pos == 3)
         {
+            // 分钟 十位 +1（0..5 循环），不影响小时
             ones = g_temp_minute % 10;
             tens = g_temp_minute / 10;
             tens++;
@@ -322,17 +340,21 @@ void Handle_TimeSet_Keys(unsigned char key)
         }
         else if (g_edit_pos == 4)
         {
+            // 小时 个位 +1，溢出则十位+1（不影响日期）
             tens = g_temp_hour / 10;
             ones = g_temp_hour % 10;
             ones++;
-            if (ones > 9)
+            if (ones > 9) {
                 ones = 0;
+                if (tens >= 2) tens = 0; else tens++;
+            }
             g_temp_hour = tens * 10 + ones;
             if (g_temp_hour >= 24)
                 g_temp_hour = 0;
         }
         else if (g_edit_pos == 5)
         {
+            // 小时 十位 +1（0..2 循环），不影响日期
             ones = g_temp_hour % 10;
             tens = g_temp_hour / 10;
             tens++;
@@ -346,23 +368,27 @@ void Handle_TimeSet_Keys(unsigned char key)
     }
     else if (key == KEY_VAL_3)
     {
-        // KEY3: 当前位-1 (逻辑未更改)
+        // KEY3: 当前位-1 (按位借位，借位仅在同字段内传播)
         if (g_edit_pos <= 1)
         {
             g_temp_second = 0;
         }
         else if (g_edit_pos == 2)
         {
+            // 分钟 个位 -1，借位到十位
             tens = g_temp_minute / 10;
             ones = g_temp_minute % 10;
-            if (ones == 0)
+            if (ones == 0) {
                 ones = 9;
-            else
+                if (tens == 0) tens = 5; else tens--;
+            } else {
                 ones--;
+            }
             g_temp_minute = tens * 10 + ones;
         }
         else if (g_edit_pos == 3)
         {
+            // 分钟 十位 -1
             ones = g_temp_minute % 10;
             tens = g_temp_minute / 10;
             if (tens == 0)
@@ -373,18 +399,22 @@ void Handle_TimeSet_Keys(unsigned char key)
         }
         else if (g_edit_pos == 4)
         {
+            // 小时 个位 -1，借位到十位
             tens = g_temp_hour / 10;
             ones = g_temp_hour % 10;
-            if (ones == 0)
+            if (ones == 0) {
                 ones = 9;
-            else
+                if (tens == 0) tens = 2; else tens--;
+            } else {
                 ones--;
+            }
             g_temp_hour = tens * 10 + ones;
             if (g_temp_hour >= 24)
                 g_temp_hour = 23;
         }
         else if (g_edit_pos == 5)
         {
+            // 小时 十位 -1
             ones = g_temp_hour % 10;
             tens = g_temp_hour / 10;
             if (tens == 0)
