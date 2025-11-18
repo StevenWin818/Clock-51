@@ -144,8 +144,7 @@ void Handle_DateSet_Keys(unsigned char key) {
                 if(day_tens >= 3) day_tens = 0; else day_tens++;
             }
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
-                g_temp_day = 1;
+            EnsureTempDayValid();
         } else if(g_edit_pos == 1) {
             // 日的十位 +1
             day_ones = g_temp_day % 10;
@@ -153,8 +152,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             day_tens++;
             if(day_tens > 3) day_tens = 0;
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
-                g_temp_day = 1;
+            EnsureTempDayValid();
         } else if(g_edit_pos == 2) {
             // 月的个位 +1, 溢出进十位
             month_tens = g_temp_month / 10;
@@ -166,8 +164,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             }
             g_temp_month = month_tens * 10 + month_ones;
             if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         } else if(g_edit_pos == 3) {
             // 月的十位 +1
             month_ones = g_temp_month % 10;
@@ -176,8 +173,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             if(month_tens > 1) month_tens = 0;
             g_temp_month = month_tens * 10 + month_ones;
             if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 1;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
             // 年份的各位 (个位到千位) 保持原有行为
             year_digit = 1;
@@ -186,8 +182,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             }
             g_temp_year = g_temp_year + year_digit;
             if(g_temp_year > 2099) g_temp_year = 2000;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         }
         Display_HomePage();
     } else if(key == KEY_VAL_3) {
@@ -203,8 +198,7 @@ void Handle_DateSet_Keys(unsigned char key) {
                 day_ones--;
             }
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         } else if(g_edit_pos == 1) {
             // 日的十位 -1
             day_ones = g_temp_day % 10;
@@ -212,8 +206,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             if(day_tens == 0) day_tens = 3;
             else day_tens--;
             g_temp_day = day_tens * 10 + day_ones;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month) || g_temp_day == 0)
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         } else if(g_edit_pos == 2) {
             // 月的个位 -1
             month_tens = g_temp_month / 10;
@@ -226,8 +219,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             }
             g_temp_month = month_tens * 10 + month_ones;
             if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         } else if(g_edit_pos == 3) {
             // 月的十位 -1
             month_ones = g_temp_month % 10;
@@ -236,8 +228,7 @@ void Handle_DateSet_Keys(unsigned char key) {
             else month_tens--;
             g_temp_month = month_tens * 10 + month_ones;
             if(g_temp_month > 12 || g_temp_month == 0) g_temp_month = 12;
-            if(g_temp_day > GetDaysInMonth(g_temp_year, g_temp_month))
-                g_temp_day = GetDaysInMonth(g_temp_year, g_temp_month);
+            EnsureTempDayValid();
         } else if(g_edit_pos >= 4 && g_edit_pos <= 7) {
             year_digit = 1;
             for(month_ones = 0; month_ones < (g_edit_pos - 4); month_ones++) {
@@ -610,5 +601,15 @@ void main(void) {
                 Display_StopwatchPage();
             }
         }
+    }
+}
+
+// 确保 g_temp_day 在当前 g_temp_year/g_temp_month 的合法范围内
+static void EnsureTempDayValid(void) {
+    unsigned char md = GetDaysInMonth(g_temp_year, g_temp_month);
+    if (g_temp_day == 0) {
+        g_temp_day = 1;
+    } else if (g_temp_day > md) {
+        g_temp_day = md;
     }
 }

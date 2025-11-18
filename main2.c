@@ -1,3 +1,7 @@
+/* main2.c: DEPRECATED duplicate of main.c - disabled to avoid duplicate symbols
+ * The file is kept for reference only. All active logic lives in main.c.
+ */
+#if 0
 /* * 优化: 添加了 pragma 指令。
  * 强制 Keil 编译器优先优化代码大小(SIZE)，而不是速度。
  */
@@ -669,3 +673,5 @@ void main(void)
         }
     }
 }
+
+#endif
