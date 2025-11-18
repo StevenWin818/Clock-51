@@ -120,16 +120,28 @@ void Buzzer_Check(void)
     }
     BUZZ_LASTSEC_SET(now_sec);
 
-    // 如果已请求取消本次整点报时，则在被抑制的小时范围内屏蔽短响与长响
+    // 如果已请求取消本次整点报时，则在被抑制的时段屏蔽短响与长响
     if (g_buzzer_suppressed)
     {
-        // 如果当前小时已不是目标小时，说明整点已过去，取消抑制
-        if (suppressed_target_hour != 0xFF && g_datetime.hour != suppressed_target_hour) {
+        if (suppressed_target_hour == 0xFF)
+        {
+            // 未设置目标小时，安全清除抑制
             g_buzzer_suppressed = 0;
-            suppressed_target_hour = 0xFF;
-        } else {
-            // 如果仍在抑制期，屏蔽所有短/长响
-            return;
+        }
+        else
+        {
+            // 保持抑制直到已越过整点（即目标小时且秒数已>0），以确保0秒的长响也被抑制。
+            if (g_datetime.hour == suppressed_target_hour && g_datetime.second > 0)
+            {
+                // 已过整点，取消抑制
+                g_buzzer_suppressed = 0;
+                suppressed_target_hour = 0xFF;
+            }
+            else
+            {
+                // 仍在抑制期，屏蔽所有短/长响
+                return;
+            }
         }
     }
 
