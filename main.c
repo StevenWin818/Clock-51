@@ -40,6 +40,9 @@ static void TempTime_Tick(void) {
         }
     }
 }
+// 前置声明，避免在文件中后面定义但先使用时报错
+static void EnsureTempDayValid(void);
+static void RefreshAfterEdit(void);
 
 // 定时器0中断服务程序 (合并所有10ms任务)
 void Timer0_ISR(void) interrupt 1 {
@@ -627,5 +630,4 @@ static void RefreshAfterEdit(void) {
 }
 
 // 前置声明，避免在文件中后面定义但先使用时报错
-static void EnsureTempDayValid(void);
-static void RefreshAfterEdit(void);
+/* prototypes removed (defined above) */
