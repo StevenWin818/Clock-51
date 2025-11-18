@@ -17,6 +17,10 @@ tmp_build_ps1.txt
 Project Backups/
 tools/
 
+# Editor/CI and repo metadata
+.vscode/
+.github/
+
 # Objects: ignore all build outputs but keep the produced hex file tracked
 !Objects/Clock.hex
 
